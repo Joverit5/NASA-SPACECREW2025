@@ -26,10 +26,10 @@ export default function HomePage() {
                 }}
               >
                 <span className="bg-gradient-to-r from-[#00e5ff] to-[#00d4ff] bg-clip-text text-transparent">
-                  SPA
+                  Space
                 </span>
                 <span className="bg-gradient-to-r from-[#a78bfa] to-[#c084fc] bg-clip-text text-transparent">
-                  TIUM
+                  Habitat
                 </span>
               </h1>
             </div>
@@ -48,7 +48,7 @@ export default function HomePage() {
                 Join room
               </Button>
             </Link>
-            <Link href="/how-to-play" className="w-full sm:w-auto">
+            <Link href="/pages/room" className="w-full sm:w-auto">
               <Button
                 size="lg"
                 variant="outline"
@@ -76,10 +76,10 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-[#0f1a2e]/70 border-[#22d3ee]/30 backdrop-blur-md hover:border-[#22d3ee]/60 hover:shadow-lg hover:shadow-cyan-500/20 transition-all">
+            <Card className="bg-[#1a0f2e]/70 border-[#a78bfa]/30 backdrop-blur-md hover:border-[#a78bfa]/60 hover:shadow-lg hover:shadow-purple-500/20 transition-all">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-[#22d3ee] tracking-wide">
-                  <Users className="h-7 w-7 text-[#22d3ee]" />
+                <CardTitle className="flex items-center gap-3 text-xl font-bold text-[#a78bfa] tracking-wide">
+                  <Users className="h-7 w-7 text-[#a78bfa]" />
                   Cooperate
                 </CardTitle>
               </CardHeader>
@@ -91,10 +91,10 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-[#0f1a2e]/70 border-[#22d3ee]/30 backdrop-blur-md hover:border-[#22d3ee]/60 hover:shadow-lg hover:shadow-cyan-500/20 transition-all">
+            <Card className="bg-[#2e1a0f]/70 border-[#fb923c]/30 backdrop-blur-md hover:border-[#fb923c]/60 hover:shadow-lg hover:shadow-orange-500/20 transition-all">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-[#22d3ee] tracking-wide">
-                  <Zap className="h-7 w-7 text-[#22d3ee]" />
+                <CardTitle className="flex items-center gap-3 text-xl font-bold text-[#fb923c] tracking-wide">
+                  <Zap className="h-7 w-7 text-[#fb923c]" />
                   Survive Events
                 </CardTitle>
               </CardHeader>
@@ -179,7 +179,7 @@ export default function HomePage() {
 
         .stars2 {
           background: transparent
-            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Ccircle cx='20' cy='40' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='90' cy='20' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='130' cy='100' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='200' cy='180' r='1.1' fill='white' opacity='0.6'/%3E%3Ccircle cx='60' cy='200' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='180' cy='80' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='45' cy='120' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='150' cy='60' r='1.1' fill='white' opacity='0.5'/%3E%3Ccircle cx='220' cy='140' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='110' cy='230' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='30' cy='160' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='190' cy='30' r='1.1' fill='white' opacity='0.6'/%3E%3Ccircle cx='75' cy='90' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='165' cy='210' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='125' cy='15' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='240' cy='110' r='1.1' fill='white' opacity='0.5'/%3E%3Ccircle cx='10' cy='70' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='95' cy='170' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='210' cy='50' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='55' cy='240' r='1.1' fill='white' opacity='0.6'/%3E%3C/svg%3E")
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Ccircle cx='20' cy='40' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='90' cy='20' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='130' cy='100' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='200' cy='180' r='1.1' fill='white' opacity='0.6'/%3E%3Ccircle cx='60' cy='200' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='180' cy='80' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='45' cy='120' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='150' cy='60' r='1.1' fill='white' opacity='0.5'/%3E%3Ccircle cx='220' cy='140' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='110' cy='230' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='30' cy='160' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='190' cy='30' r='1.1' fill='white' opacity='0.6'/%3E%3Ccircle cx='75' cy='90' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='165' cy='210' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='125' cy='15' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='240' cy='110' r='1.1' fill='white' opacity='0.5'/%3E%3Ccircle cx='10' cy='70' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='95' cy='170' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='210' cy='50' r='1.5' fill='white' opacity='0.4'/%3E%3Ccircle cx='55' cy='240' r='1.1' fill='white' opacity='0.6'/%3E%3C/svg%3E")
             repeat;
         }
 
