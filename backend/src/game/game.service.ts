@@ -1,14 +1,14 @@
-import { GameState, PlayerMovePayload } from "../shared/types";
+import { GameState, PlayerMovePayload, PlayerState } from "../shared/types";
 
 export class GameService {
   private state: GameState = { players: {} };
 
-  addPlayer(id: string) {
+  addPlayer(id: string, data: Partial<PlayerState> = {}) {
     this.state.players[id] = {
       id,
-      x: 100,
-      y: 100,
-      direction: "idle",
+      x: data.x ?? 0,
+      y: data.y ?? 0,
+      direction: data.direction ?? "idle",
       connectedAt: Date.now()
     };
   }

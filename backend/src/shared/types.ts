@@ -20,7 +20,7 @@ export interface PlayerMovePayload {
 }
 
 // Direcciones posibles (puedes expandirlo con diagonales si usas 8 direcciones)
-export type Direction = "up" | "down" | "left" | "right" | "idle";
+export type Direction = "up" | "down" | "left" | "right" | "idle" | "up-left" | "up-right" | "down-left" | "down-right";
 
 // Eventos que puede emitir o recibir el cliente
 export interface ClientToServerEvents {

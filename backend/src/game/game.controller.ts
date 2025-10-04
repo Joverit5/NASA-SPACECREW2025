@@ -6,18 +6,20 @@ export class GameController {
   constructor(private io: Server, private gameService: GameService) {}
 
   registerHandlers(socket: Socket) {
-    socket.on("game:join", () => {
-      this.gameService.addPlayer(socket.id);
-    });
+    console.log(`Handlers registrados para: ${socket.id}`);
 
-    socket.on("player:move", (data: PlayerMovePayload) => {
+    this.gameService.addPlayer(socket.id);
+
+    socket.on("player:move", (data) => {
       this.gameService.updatePlayer(socket.id, data);
-      this.io.emit("state:update", this.gameService.getState());
+      const state = this.gameService.getState();
+      this.io.emit("state:update", state);
     });
 
     socket.on("disconnect", () => {
       this.gameService.removePlayer(socket.id);
-      this.io.emit("state:update", this.gameService.getState());
+      const state = this.gameService.getState();
+      this.io.emit("state:update", state);
     });
   }
 }

@@ -1,8 +1,9 @@
 import { Server } from "socket.io";
+import * as http from "http";
 import { GameController } from "./game.controller";
 import { GameService } from "./game.service";
 
-export function createGameGateway(httpServer: any) {
+export function createGameGateway(httpServer: http.Server) {
   const io = new Server(httpServer, {
     cors: { origin: "*" },
   });
