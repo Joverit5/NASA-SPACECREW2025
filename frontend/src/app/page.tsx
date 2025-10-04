@@ -1,250 +1,283 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
-import { Globe, Users, Zap, ArrowRight, Rocket } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
-import { useState } from "react"
+import { Terminal, Users, Zap, Globe } from "lucide-react"
+import { useEffect, useRef } from "react"
 
 export default function HomePage() {
-  const router = useRouter()
-  const supabase = createClient()
-  const [isCreating, setIsCreating] = useState(false)
+  const heroRef = useRef<HTMLDivElement>(null)
+  const featuresRef = useRef<HTMLDivElement>(null)
+  const spaceshipRef = useRef<HTMLDivElement>(null)
+  const ctaRef = useRef<HTMLDivElement>(null)
 
-  const handleCreateRoom = async () => {
-    setIsCreating(true)
-    try {
-      // Generate a random player name for now
-      const playerName = `Player_${Math.floor(Math.random() * 10000)}`
-
-      // Create a new room
-      const { data: roomData, error: roomError } = await supabase
-        .from("rooms")
-        .insert({
-          status: "waiting",
-          max_players: 5,
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("animate-fade-in-up")
+          }
         })
-        .select()
-        .single()
+      },
+      { threshold: 0.1 },
+    )
 
-      if (roomError) throw roomError
+    const elements = [heroRef.current, featuresRef.current, spaceshipRef.current, ctaRef.current]
+    elements.forEach((el) => el && observer.observe(el))
 
-      // Create the player (creator) in the room
-      const { data: playerData, error: playerError } = await supabase
-        .from("players")
-        .insert({
-          room_id: roomData.id,
-          name: playerName,
-          is_ready: false,
-        })
-        .select()
-        .single()
+    return () => observer.disconnect()
+  }, [])
 
-      if (playerError) throw playerError
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrolled = window.scrollY
+      const stars1 = document.querySelector(".stars") as HTMLElement
+      const stars2 = document.querySelector(".stars2") as HTMLElement
+      const stars3 = document.querySelector(".stars3") as HTMLElement
 
-      // Update the room with the creator_id
-      const { error: updateError } = await supabase
-        .from("rooms")
-        .update({ creator_id: playerData.id })
-        .eq("id", roomData.id)
-
-      if (updateError) throw updateError
-
-      // Navigate to the room page
-      router.push(`/room/${roomData.id}?playerId=${playerData.id}`)
-    } catch (error) {
-      console.error("Error creating room:", error)
-      setIsCreating(false)
+      if (stars1) stars1.style.transform = `translateY(${scrolled * 0.5}px)`
+      if (stars2) stars2.style.transform = `translateY(${scrolled * 0.3}px)`
+      if (stars3) stars3.style.transform = `translateY(${scrolled * 0.2}px)`
     }
-  }
+
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#1a1a4e] to-[#2d1b4e] text-white overflow-hidden relative">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="stars" />
-        <div className="stars2" />
-        <div className="stars3" />
+    <div className="min-h-screen bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a] text-blue-300 relative overflow-hidden font-mono scroll-smooth">
+      {/* Scanline effect */}
+      <div className="absolute inset-0 pointer-events-none opacity-5">
+        <div className="h-full w-full bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(96,165,250,0.1)_2px,rgba(96,165,250,0.1)_4px)]"></div>
       </div>
 
-      <div className="container mx-auto px-4 py-12 relative z-10">
-        <div className="max-w-6xl mx-auto space-y-12">
-          <div className="text-center space-y-6 animate-fade-in">
-            <div className="flex items-center justify-center gap-3">
-              <Globe className="h-12 w-12 text-[#00e5ff]" />
-              <h1
-                className="text-4xl md:text-6xl font-black tracking-wide"
-                style={{
-                  fontFamily: "'Orbitron', 'Arial Black', sans-serif",
-                }}
-              >
-                <span className="bg-gradient-to-r from-[#00e5ff] to-[#00d4ff] bg-clip-text text-transparent">
-                  Space
-                </span>
-                <span className="bg-gradient-to-r from-[#a78bfa] to-[#c084fc] bg-clip-text text-transparent">
-                  Habitat
-                </span>
-              </h1>
+      {/* CRT flicker effect */}
+      <div className="absolute inset-0 pointer-events-none opacity-5 animate-pulse"></div>
+
+      {/* Pixel stars background */}
+      <div className="absolute inset-0 overflow-hidden opacity-60">
+        <div className="stars"></div>
+        <div className="stars2"></div>
+        <div className="stars3"></div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="relative z-10 border-b-2 border-blue-400/30 px-8 py-4 bg-slate-900/50 backdrop-blur-[2px]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Terminal className="w-6 h-6 text-blue-400" />
+            <span className="text-xl font-bold tracking-wider text-blue-400">[SPATIUM]</span>
+          </div>
+          <div className="hidden md:flex items-center gap-6 text-sm">
+            <Link href="#mission" className="hover:text-cyan-400 transition-colors">
+              {">"} MISSION
+            </Link>
+            <Link href="#features" className="hover:text-cyan-400 transition-colors">
+              {">"} FEATURES
+            </Link>
+            <Link href="#about" className="hover:text-cyan-400 transition-colors">
+              {">"} ABOUT
+            </Link>
+            <Link href="/lobby" className="hover:text-cyan-400 transition-colors">
+              {">"} PLAY NOW
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <main className="relative z-10 max-w-7xl mx-auto px-8 pt-12 pb-20">
+        <div ref={heroRef} className="space-y-8 opacity-0 transition-all duration-1000">
+          {/* ASCII Art Header */}
+          <div className="text-center">
+            <pre className="text-blue-400 text-xs md:text-sm leading-tight inline-block drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]">
+              {`   _____ _____   _______ _____ _    _ __  __ 
+  / ____|  __ \\ /\\|__   __|_   _| |  | |  \\/  |
+ | (___ | |__) /  \\  | |    | | | |  | | \\  / |
+  \\___ \\|  ___/ /\\ \\ | |    | | | |  | | |\\/| |
+  ____) | |  / ____ \\| |   _| |_| |__| | |  | |
+ |_____/|_| /_/    \\_\\_|  |_____|\\____/|_|  |_|`}
+            </pre>
+          </div>
+
+          {/* System Status */}
+          <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-6 max-w-4xl mx-auto shadow-[0_0_20px_rgba(96,165,250,0.3)]">
+            <div className="space-y-2 text-sm">
+              <p className="text-cyan-400">{">"} SYSTEM STATUS: ONLINE</p>
+              <p className="text-blue-300">{">"} MISSION TYPE: MARS HABITAT SIMULATION</p>
+              <p className="text-purple-400">{">"} CLEARANCE LEVEL: AUTHORIZED</p>
             </div>
-            <p className="text-xl md:text-2xl text-emerald-400 font-light tracking-wide">
-              <span className="font-bold">Prepare your crew for habitat construction</span>
+          </div>
+
+          {/* Main heading */}
+          <div className="text-center space-y-4 py-8">
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
+              <span className="text-blue-400">{">"} BUILDING THE FUTURE OF</span>
+              <br />
+              <span className="text-cyan-400 animate-pulse drop-shadow-[0_0_15px_rgba(34,211,238,0.7)]">
+                SPACE HABITATS
+              </span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-base md:text-lg text-blue-200 max-w-3xl mx-auto leading-relaxed">
+              {">"} Collaborate with your crew to design, build, and survive in a Mars habitat.
+              <br />
+              {">"} Face real challenges, make critical decisions, and learn what it takes to live among the stars.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/pages/lobby" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                className="w-full text-lg font-semibold px-10 py-6 bg-[#22d3ee] hover:bg-[#06b6d4] text-slate-900 shadow-lg shadow-cyan-500/50 transition-all tracking-wide cursor-pointer"
-              >
-                <Rocket className="mr-2 h-5 w-5" />
-                Join room
-              </Button>
-            </Link>
-            <Link href="/pages/room" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full text-lg font-medium px-10 py-6 bg-transparent border-2 border-[#22d3ee]/50 text-[#22d3ee] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] transition-all tracking-wide cursor-pointer"
-                onClick={handleCreateRoom}
-                disabled={isCreating}
-              >
-                Create room
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <Button
+              asChild
+              size="lg"
+              className="bg-blue-400 text-black hover:bg-blue-300 font-mono font-bold border-2 border-blue-400"
+            >
+              <Link href="/lobby">
+                <Users className="w-5 h-5 mr-2" />
+                {">"} JOIN MISSION
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-2 border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 font-mono font-bold bg-transparent"
+            >
+              <Link href="#features">{">"} LEARN MORE</Link>
+            </Button>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mt-16">
-            <Card className="bg-[#0f1a2e]/70 border-[#22d3ee]/30 backdrop-blur-md hover:border-[#22d3ee]/60 hover:shadow-lg hover:shadow-cyan-500/20 transition-all">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-[#22d3ee] tracking-wide">
-                  <span className="text-3xl">🏗️</span>
-                  Design Habitats
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-slate-300 leading-relaxed text-base">
-                  Use a 20×20 grid powered by Phaser 3 to place functional areas like kitchens, sleep quarters, and
-                  control centers. Balance space, cost, and crew needs.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#1a0f2e]/70 border-[#a78bfa]/30 backdrop-blur-md hover:border-[#a78bfa]/60 hover:shadow-lg hover:shadow-purple-500/20 transition-all">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-[#a78bfa] tracking-wide">
-                  <Users className="h-7 w-7 text-[#a78bfa]" />
-                  Cooperate
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-slate-300 leading-relaxed text-base">
-                  Work with up to 5 players in real-time. Each role brings unique perspectives to create the optimal
-                  habitat design for deep space missions.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#2e1a0f]/70 border-[#fb923c]/30 backdrop-blur-md hover:border-[#fb923c]/60 hover:shadow-lg hover:shadow-orange-500/20 transition-all">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-[#fb923c] tracking-wide">
-                  <Zap className="h-7 w-7 text-[#fb923c]" />
-                  Survive Events
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-slate-300 leading-relaxed text-base">
-                  Face technical challenges like oxygen leaks, power failures, and equipment malfunctions. Your design
-                  choices determine crew survival!
-                </CardDescription>
-              </CardContent>
-            </Card>
+          {/* Stats Terminal */}
+          <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto pt-12">
+            <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-4 text-center shadow-[0_0_15px_rgba(96,165,250,0.2)]">
+              <div className="text-3xl font-bold text-cyan-400 font-mono">05</div>
+              <div className="text-xs text-blue-300 mt-2">PLAYERS PER MISSION</div>
+            </div>
+            <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-4 text-center shadow-[0_0_15px_rgba(96,165,250,0.2)]">
+              <div className="text-3xl font-bold text-purple-400 font-mono">20</div>
+              <div className="text-xs text-blue-300 mt-2">CRITICAL EVENTS</div>
+            </div>
+            <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-4 text-center shadow-[0_0_15px_rgba(96,165,250,0.2)]">
+              <div className="text-3xl font-bold text-blue-400 font-mono">30</div>
+              <div className="text-xs text-blue-300 mt-2">MISSION DAYS</div>
+            </div>
           </div>
-
-          <Card className="bg-[#0f1a2e]/70 border-[#22d3ee]/30 backdrop-blur-md">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-[#22d3ee] flex items-center gap-2 tracking-wide">
-                <Users className="h-6 w-6" />
-                Mission Objective
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#22d3ee] mt-2 flex-shrink-0" />
-                <p className="text-slate-300 leading-relaxed text-base">
-                  <strong className="text-[#22d3ee] font-semibold">Mission:</strong> Design a space habitat that can
-                  sustain your crew through a 30-day mission within strict budget constraints.
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#22d3ee] mt-2 flex-shrink-0" />
-                <p className="text-slate-300 leading-relaxed text-base">
-                  <strong className="text-[#22d3ee] font-semibold">Challenge:</strong> Balance area requirements, costs,
-                  and crew needs while preparing for random technical events that will test your design.
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#22d3ee] mt-2 flex-shrink-0" />
-                <p className="text-slate-300 leading-relaxed text-base">
-                  <strong className="text-[#22d3ee] font-semibold">Victory:</strong> Keep all crew resources (Hunger,
-                  Sanity, Oxygen, Health) above critical levels throughout the entire simulation.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
-      </div>
 
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+        {/* Features Section */}
+        <section id="features" ref={featuresRef} className="pt-20 space-y-12 opacity-0 transition-all duration-1000">
+          <div className="text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-blue-400">{">"} MISSION FEATURES</h2>
+            <div className="h-1 w-32 bg-blue-400 mx-auto mt-4 shadow-[0_0_10px_rgba(96,165,250,0.7)]"></div>
+          </div>
 
-        .animate-fade-in {
-          animation: fade-in 0.8s ease-out;
-        }
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-6 space-y-4 hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
+              <div className="flex items-center gap-3">
+                <Globe className="w-6 h-6 text-cyan-400" />
+                <h3 className="text-lg font-bold text-cyan-400">COLLABORATIVE DESIGN</h3>
+              </div>
+              <p className="text-sm text-blue-200 leading-relaxed">
+                {">"} Work together to design a 20×20 habitat with essential areas: kitchen, sleeping quarters,
+                recreation, and more.
+              </p>
+            </div>
 
-        .stars,
-        .stars2,
-        .stars3 {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          width: 100%;
-          height: 100%;
-          display: block;
-        }
+            <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-6 space-y-4 hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
+              <div className="flex items-center gap-3">
+                <Zap className="w-6 h-6 text-purple-400" />
+                <h3 className="text-lg font-bold text-purple-400">REAL TIME EVENTS</h3>
+              </div>
+              <p className="text-sm text-blue-200 leading-relaxed">
+                {">"} Face 20 technical challenges from oxygen leaks to meteor strikes. Every decision matters for
+                survival.
+              </p>
+            </div>
 
-        /* Removed animation to keep stars static and always visible */
-        .stars {
-          background: transparent
-            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='10' cy='10' r='0.8' fill='white' opacity='0.8'/%3E%3Ccircle cx='50' cy='30' r='0.6' fill='white' opacity='0.6'/%3E%3Ccircle cx='80' cy='60' r='0.9' fill='white' opacity='0.9'/%3E%3Ccircle cx='30' cy='80' r='0.7' fill='white' opacity='0.7'/%3E%3Ccircle cx='120' cy='40' r='0.8' fill='white' opacity='0.8'/%3E%3Ccircle cx='160' cy='90' r='0.6' fill='white' opacity='0.6'/%3E%3Ccircle cx='90' cy='120' r='0.7' fill='white' opacity='0.7'/%3E%3Ccircle cx='140' cy='160' r='0.8' fill='white' opacity='0.8'/%3E%3Ccircle cx='180' cy='20' r='0.6' fill='white' opacity='0.6'/%3E%3Ccircle cx='20' cy='140' r='0.9' fill='white' opacity='0.9'/%3E%3Ccircle cx='65' cy='15' r='0.7' fill='white' opacity='0.7'/%3E%3Ccircle cx='110' cy='75' r='0.6' fill='white' opacity='0.6'/%3E%3Ccircle cx='145' cy='25' r='0.8' fill='white' opacity='0.8'/%3E%3Ccircle cx='35' cy='110' r='0.7' fill='white' opacity='0.7'/%3E%3Ccircle cx='175' cy='135' r='0.6' fill='white' opacity='0.6'/%3E%3Ccircle cx='95' cy='180' r='0.8' fill='white' opacity='0.8'/%3E%3Ccircle cx='130' cy='50' r='0.7' fill='white' opacity='0.7'/%3E%3Ccircle cx='15' cy='165' r='0.6' fill='white' opacity='0.6'/%3E%3Ccircle cx='190' cy='105' r='0.9' fill='white' opacity='0.9'/%3E%3Ccircle cx='55' cy='145' r='0.7' fill='white' opacity='0.7'/%3E%3Ccircle cx='100' cy='5' r='0.6' fill='white' opacity='0.6'/%3E%3Ccircle cx='170' cy='70' r='0.6' fill='white' opacity='0.6'/%3E%3C/svg%3E")
-            repeat;
-        }
+            <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-6 space-y-4 hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
+              <div className="flex items-center gap-3">
+                <Users className="w-6 h-6 text-blue-400" />
+                <h3 className="text-lg font-bold text-blue-400">TEAM ROLES</h3>
+              </div>
+              <p className="text-sm text-blue-200 leading-relaxed">
+                {">"} Each player gets a specialized role: Engineer, Medic, Biologist, Technician, or Scientist.
+              </p>
+            </div>
+          </div>
+        </section>
 
-        .stars2 {
-          background: transparent
-            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Ccircle cx='20' cy='40' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='90' cy='20' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='130' cy='100' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='200' cy='180' r='1.1' fill='white' opacity='0.6'/%3E%3Ccircle cx='60' cy='200' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='180' cy='80' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='45' cy='120' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='150' cy='60' r='1.1' fill='white' opacity='0.5'/%3E%3Ccircle cx='220' cy='140' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='110' cy='230' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='30' cy='160' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='190' cy='30' r='1.1' fill='white' opacity='0.6'/%3E%3Ccircle cx='75' cy='90' r='1' fill='white' opacity='0.5'/%3E%3Ccircle cx='165' cy='210' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='125' cy='15' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='240' cy='110' r='1.1' fill='white' opacity='0.5'/%3E%3Ccircle cx='10' cy='70' r='1' fill='white' opacity='0.6'/%3E%3Ccircle cx='95' cy='170' r='1.2' fill='white' opacity='0.7'/%3E%3Ccircle cx='210' cy='50' r='1.5' fill='white' opacity='0.4'/%3E%3Ccircle cx='55' cy='240' r='1.1' fill='white' opacity='0.6'/%3E%3C/svg%3E")
-            repeat;
-        }
+        {/* ASCII Art Spaceship */}
+        <section ref={spaceshipRef} className="pt-20 opacity-0 transition-all duration-1000">
+          <div className="text-center">
+            <pre className="text-blue-400 text-xs leading-tight inline-block opacity-60 drop-shadow-[0_0_8px_rgba(96,165,250,0.4)]">
+              {`
+       /\\
+      /  \\
+     |    |
+    /|    |\\
+   / |    | \\
+  |  |    |  |
+  |  |    |  |
+  |  |::::|  |
+  |  |::::|  |
+  |  |::::|  |
+  |  |::::|  |
+  |  |::::|  |
+   \\ |::::| /
+    \\|::::|/
+     |::::|
+     |::::|
+    /|::::|\\
+   / |::::| \\
+  |  |::::|  |
+  |  |::::|  |
+   \\ |::::| /
+    \\|::::|/
+     |::::|
+     |::::|
+     /====\\
+    /======\\
+   |========|
+   |========|
+    \\======/
+     \\====/
+      \\==/
+       \\/
+`}
+            </pre>
+          </div>
+        </section>
 
-        .stars3 {
-          background: transparent
-            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Ccircle cx='40' cy='60' r='1.5' fill='white' opacity='0.4'/%3E%3Ccircle cx='160' cy='140' r='1.8' fill='white' opacity='0.5'/%3E%3Ccircle cx='240' cy='80' r='1.6' fill='white' opacity='0.4'/%3E%3Ccircle cx='100' cy='240' r='1.7' fill='white' opacity='0.5'/%3E%3Ccircle cx='200' cy='200' r='1.5' fill='white' opacity='0.4'/%3E%3Ccircle cx='80' cy='160' r='1.6' fill='white' opacity='0.5'/%3E%3Ccircle cx='270' cy='180' r='1.8' fill='white' opacity='0.4'/%3E%3Ccircle cx='140' cy='40' r='1.5' fill='white' opacity='0.5'/%3E%3Ccircle cx='20' cy='220' r='1.7' fill='white' opacity='0.4'/%3E%3Ccircle cx='280' cy='120' r='1.6' fill='white' opacity='0.5'/%3E%3Ccircle cx='120' cy='100' r='1.5' fill='white' opacity='0.4'/%3E%3Ccircle cx='60' cy='20' r='1.8' fill='white' opacity='0.5'/%3E%3Ccircle cx='220' cy='260' r='1.6' fill='white' opacity='0.4'/%3E%3Ccircle cx='180' cy='30' r='1.7' fill='white' opacity='0.5'/%3E%3Ccircle cx='10' cy='150' r='1.5' fill='white' opacity='0.4'/%3E%3C/svg%3E")
-            repeat;
-        }
-      `}</style>
+        {/* CTA Section */}
+        <section ref={ctaRef} className="pt-20 text-center space-y-6 opacity-0 transition-all duration-1000">
+          <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-8 max-w-2xl mx-auto shadow-[0_0_25px_rgba(96,165,250,0.3)]">
+            <h2 className="text-2xl md:text-3xl font-bold text-cyan-400 mb-4">{">"} READY TO BOARD THE STARSHIP?</h2>
+            <p className="text-base text-blue-200 mb-6">
+              {">"} Join your crew and start building humanity&#39;s future in space.
+            </p>
+            <Button
+              asChild
+              size="lg"
+              className="bg-cyan-400 text-slate-900 hover:bg-cyan-300 font-mono font-bold border-2 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.5)]"
+            >
+              <Link href="/lobby">
+                <Terminal className="w-5 h-5 mr-2" />
+                {">"} LAUNCH MISSION
+              </Link>
+            </Button>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t-2 border-blue-400/30 mt-20 bg-slate-900/50 backdrop-blur-[2px]">
+        <div className="max-w-7xl mx-auto px-8 py-6 text-center text-blue-400/60 text-sm">
+          <p>{">"} © 2025 SPATIUM. ALL SYSTEMS OPERATIONAL.</p>
+        </div>
+      </footer>
     </div>
   )
 }

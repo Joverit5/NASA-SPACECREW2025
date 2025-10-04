@@ -1,26 +1,177 @@
 @import "tailwindcss";
 
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Terminal-inspired color scheme with greens and cyans */
+  --background: oklch(0 0 0); /* Pure black */
+  --foreground: oklch(0.65 0.15 240); /* Blue */
+  --card: oklch(0.05 0 0);
+  --card-foreground: oklch(0.65 0.15 240);
+  --popover: oklch(0.05 0 0);
+  --popover-foreground: oklch(0.65 0.15 240);
+  --primary: oklch(0.65 0.15 240); /* Blue */
+  --primary-foreground: oklch(0 0 0);
+  --secondary: oklch(0.7 0.15 195); /* Cyan */
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.2 0 0);
+  --muted-foreground: oklch(0.5 0.1 240);
+  --accent: oklch(0.7 0.15 195); /* Cyan */
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.6 0.2 300); /* Purple */
+  --destructive-foreground: oklch(0 0 0);
+  --border: oklch(0.3 0.1 240);
+  --input: oklch(0.3 0.1 240);
+  --ring: oklch(0.65 0.15 240);
+  --chart-1: oklch(0.65 0.15 240);
+  --chart-2: oklch(0.7 0.15 195);
+  --chart-3: oklch(0.6 0.15 280);
+  --chart-4: oklch(0.65 0.2 300);
+  --chart-5: oklch(0.5 0.15 260);
+  --radius: 0rem; /* Sharp corners for terminal aesthetic */
+  --sidebar: oklch(0.05 0 0);
+  --sidebar-foreground: oklch(0.65 0.15 240);
+  --sidebar-primary: oklch(0.65 0.15 240);
+  --sidebar-primary-foreground: oklch(0 0 0);
+  --sidebar-accent: oklch(0.2 0 0);
+  --sidebar-accent-foreground: oklch(0.65 0.15 240);
+  --sidebar-border: oklch(0.3 0.1 240);
+  --sidebar-ring: oklch(0.65 0.15 240);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.65 0.15 240);
+  --card: oklch(0.05 0 0);
+  --card-foreground: oklch(0.65 0.15 240);
+  --popover: oklch(0.05 0 0);
+  --popover-foreground: oklch(0.65 0.15 240);
+  --primary: oklch(0.65 0.15 240);
+  --primary-foreground: oklch(0 0 0);
+  --secondary: oklch(0.7 0.15 195);
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.2 0 0);
+  --muted-foreground: oklch(0.5 0.1 240);
+  --accent: oklch(0.7 0.15 195);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.6 0.2 300);
+  --destructive-foreground: oklch(0 0 0);
+  --border: oklch(0.3 0.1 240);
+  --input: oklch(0.3 0.1 240);
+  --ring: oklch(0.65 0.15 240);
+  --chart-1: oklch(0.65 0.15 240);
+  --chart-2: oklch(0.7 0.15 195);
+  --chart-3: oklch(0.6 0.15 280);
+  --chart-4: oklch(0.65 0.2 300);
+  --chart-5: oklch(0.5 0.15 260);
+  --sidebar: oklch(0.05 0 0);
+  --sidebar-foreground: oklch(0.65 0.15 240);
+  --sidebar-primary: oklch(0.65 0.15 240);
+  --sidebar-primary-foreground: oklch(0 0 0);
+  --sidebar-accent: oklch(0.2 0 0);
+  --sidebar-accent-foreground: oklch(0.65 0.15 240);
+  --sidebar-border: oklch(0.3 0.1 240);
+  --sidebar-ring: oklch(0.65 0.15 240);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Pixel-art starfield animation */
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Fade-in-up animation for scroll effects */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+/* Updated stars animations to work with parallax */
+@keyframes stars-move {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100px);
+  }
+}
+
+.pixel-stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(2px 2px at 20% 30%, #60a5fa, transparent),
+    radial-gradient(2px 2px at 60% 70%, #22d3ee, transparent), radial-gradient(1px 1px at 50% 50%, #93c5fd, transparent),
+    radial-gradient(1px 1px at 80% 10%, #67e8f9, transparent), radial-gradient(2px 2px at 90% 60%, #a78bfa, transparent),
+    radial-gradient(1px 1px at 33% 80%, #60a5fa, transparent), radial-gradient(2px 2px at 15% 90%, #22d3ee, transparent),
+    radial-gradient(1px 1px at 45% 20%, #93c5fd, transparent), radial-gradient(2px 2px at 70% 40%, #a78bfa, transparent),
+    radial-gradient(1px 1px at 25% 60%, #67e8f9, transparent);
+  background-size: 200px 200px, 300px 300px, 250px 250px, 350px 350px, 280px 280px, 320px 320px, 290px 290px, 240px
+    240px, 310px 310px, 270px 270px;
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+.stars {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background-image: radial-gradient(2px 2px at 10% 20%, #60a5fa, transparent),
+    radial-gradient(2px 2px at 30% 50%, #22d3ee, transparent), radial-gradient(1px 1px at 50% 70%, #93c5fd, transparent),
+    radial-gradient(1px 1px at 70% 30%, #67e8f9, transparent), radial-gradient(2px 2px at 90% 80%, #a78bfa, transparent);
+  background-size: 300px 300px;
+  animation: stars-move 120s linear infinite;
+  transition: transform 0.1s ease-out;
+}
+
+.stars2 {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background-image: radial-gradient(1px 1px at 20% 40%, #60a5fa, transparent),
+    radial-gradient(1px 1px at 60% 60%, #22d3ee, transparent), radial-gradient(1px 1px at 40% 80%, #93c5fd, transparent),
+    radial-gradient(1px 1px at 80% 20%, #67e8f9, transparent);
+  background-size: 200px 200px;
+  animation: stars-move 90s linear infinite;
+  transition: transform 0.1s ease-out;
+}
+
+.stars3 {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background-image: radial-gradient(1px 1px at 15% 35%, #a78bfa, transparent),
+    radial-gradient(1px 1px at 55% 65%, #60a5fa, transparent), radial-gradient(1px 1px at 75% 45%, #22d3ee, transparent);
+  background-size: 250px 250px;
+  animation: stars-move 60s linear infinite;
+  transition: transform 0.1s ease-out;
 }
