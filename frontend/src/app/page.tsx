@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { Terminal, Users, Zap, Globe } from "lucide-react"
 import { useEffect, useRef } from "react"
+import { TypewriterText } from "@/components/typewriter-text"
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null)
@@ -104,9 +105,15 @@ export default function HomePage() {
           {/* System Status */}
           <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-6 max-w-4xl mx-auto shadow-[0_0_20px_rgba(96,165,250,0.3)]">
             <div className="space-y-2 text-sm">
-              <p className="text-cyan-400">{">"} SYSTEM STATUS: ONLINE</p>
-              <p className="text-blue-300">{">"} MISSION TYPE: MARS HABITAT SIMULATION</p>
-              <p className="text-purple-400">{">"} CLEARANCE LEVEL: AUTHORIZED</p>
+              <p className="text-cyan-400">
+                <TypewriterText text="> SYSTEM STATUS: ONLINE" speed={40} />
+              </p>
+              <p className="text-blue-300">
+                <TypewriterText text="> MISSION TYPE: MARS HABITAT SIMULATION" speed={40} delay={800} />
+              </p>
+              <p className="text-purple-400">
+                <TypewriterText text="> CLEARANCE LEVEL: AUTHORIZED" speed={40} delay={1600} />
+              </p>
             </div>
           </div>
 
@@ -153,16 +160,28 @@ export default function HomePage() {
           {/* Stats Terminal */}
           <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto pt-12">
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-4 text-center shadow-[0_0_15px_rgba(96,165,250,0.2)]">
-              <div className="text-3xl font-bold text-cyan-400 font-mono">05</div>
-              <div className="text-xs text-blue-300 mt-2">PLAYERS PER MISSION</div>
+              <div className="text-3xl font-bold text-cyan-400 font-mono">
+                <TypewriterText text="05" speed={100} />
+              </div>
+              <div className="text-xs text-blue-300 mt-2">
+                <TypewriterText text="PLAYERS PER MISSION" speed={30} delay={300} />
+              </div>
             </div>
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-4 text-center shadow-[0_0_15px_rgba(96,165,250,0.2)]">
-              <div className="text-3xl font-bold text-purple-400 font-mono">20</div>
-              <div className="text-xs text-blue-300 mt-2">CRITICAL EVENTS</div>
+              <div className="text-3xl font-bold text-purple-400 font-mono">
+                <TypewriterText text="20" speed={100} delay={100} />
+              </div>
+              <div className="text-xs text-blue-300 mt-2">
+                <TypewriterText text="CRITICAL EVENTS" speed={30} delay={400} />
+              </div>
             </div>
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-4 text-center shadow-[0_0_15px_rgba(96,165,250,0.2)]">
-              <div className="text-3xl font-bold text-blue-400 font-mono">30</div>
-              <div className="text-xs text-blue-300 mt-2">MISSION DAYS</div>
+              <div className="text-3xl font-bold text-blue-400 font-mono">
+                <TypewriterText text="30" speed={100} delay={200} />
+              </div>
+              <div className="text-xs text-blue-300 mt-2">
+                <TypewriterText text="MISSION DAYS" speed={30} delay={500} />
+              </div>
             </div>
           </div>
         </div>
@@ -178,32 +197,48 @@ export default function HomePage() {
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-6 space-y-4 hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
               <div className="flex items-center gap-3">
                 <Globe className="w-6 h-6 text-cyan-400" />
-                <h3 className="text-lg font-bold text-cyan-400">COLLABORATIVE DESIGN</h3>
+                <h3 className="text-lg font-bold text-cyan-400">
+                  <TypewriterText text="COLLABORATIVE DESIGN" speed={50} />
+                </h3>
               </div>
               <p className="text-sm text-blue-200 leading-relaxed">
-                {">"} Work together to design a 20×20 habitat with essential areas: kitchen, sleeping quarters,
-                recreation, and more.
+                <TypewriterText
+                  text="> Work together to design a 20×20 habitat with essential areas: kitchen, sleeping quarters, recreation, and more."
+                  speed={20}
+                  delay={800}
+                />
               </p>
             </div>
 
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-6 space-y-4 hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
               <div className="flex items-center gap-3">
                 <Zap className="w-6 h-6 text-purple-400" />
-                <h3 className="text-lg font-bold text-purple-400">REAL TIME EVENTS</h3>
+                <h3 className="text-lg font-bold text-purple-400">
+                  <TypewriterText text="REAL TIME EVENTS" speed={50} delay={200} />
+                </h3>
               </div>
               <p className="text-sm text-blue-200 leading-relaxed">
-                {">"} Face 20 technical challenges from oxygen leaks to meteor strikes. Every decision matters for
-                survival.
+                <TypewriterText
+                  text="> Face 20 technical challenges from oxygen leaks to meteor strikes. Every decision matters for survival."
+                  speed={20}
+                  delay={1000}
+                />
               </p>
             </div>
 
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-6 space-y-4 hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
               <div className="flex items-center gap-3">
                 <Users className="w-6 h-6 text-blue-400" />
-                <h3 className="text-lg font-bold text-blue-400">TEAM ROLES</h3>
+                <h3 className="text-lg font-bold text-blue-400">
+                  <TypewriterText text="TEAM ROLES" speed={50} delay={400} />
+                </h3>
               </div>
               <p className="text-sm text-blue-200 leading-relaxed">
-                {">"} Each player gets a specialized role: Engineer, Medic, Biologist, Technician, or Scientist.
+                <TypewriterText
+                  text="> Each player gets a specialized role: Engineer, Medic, Biologist, Technician, or Scientist."
+                  speed={20}
+                  delay={1200}
+                />
               </p>
             </div>
           </div>
@@ -254,9 +289,15 @@ export default function HomePage() {
         {/* CTA Section */}
         <section ref={ctaRef} className="pt-20 text-center space-y-6 opacity-0 transition-all duration-1000">
           <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-8 max-w-2xl mx-auto shadow-[0_0_25px_rgba(96,165,250,0.3)]">
-            <h2 className="text-2xl md:text-3xl font-bold text-cyan-400 mb-4">{">"} READY TO BOARD THE STARSHIP?</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-cyan-400 mb-4">
+              <TypewriterText text="> READY TO BOARD THE STARSHIP?" speed={50} />
+            </h2>
             <p className="text-base text-blue-200 mb-6">
-              {">"} Join your crew and start building humanity&#39;s future in space.
+              <TypewriterText
+                text="> Join your crew and start building humanity's future in space."
+                speed={30}
+                delay={1200}
+              />
             </p>
             <Button
               asChild
