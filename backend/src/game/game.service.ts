@@ -14,9 +14,12 @@ export class GameService {
   }
 
   updatePlayer(id: string, data: PlayerMovePayload) {
-    if (!this.state.players[id]) return;
-    this.state.players[id].x += data.dx;
-    this.state.players[id].y += data.dy;
+    const player = this.state.players[id];
+    if (!player) return;
+
+    player.x += data.dx;
+    player.y += data.dy;
+    player.direction = data.direction;
   }
 
   removePlayer(id: string) {
