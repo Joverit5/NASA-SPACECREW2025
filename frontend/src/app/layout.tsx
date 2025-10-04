@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SpaceHabitat",
-  description: "SpaceHabitat - Your Gateway to the Stars",
+  title: "SPATIUM",
+  description: "SPATIUM - Your Gateway to the Stars",
 };
 
 export default function RootLayout({

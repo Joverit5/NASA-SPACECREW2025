@@ -26,10 +26,10 @@ export default function HomePage() {
                 }}
               >
                 <span className="bg-gradient-to-r from-[#00e5ff] to-[#00d4ff] bg-clip-text text-transparent">
-                  Space
+                  SPA
                 </span>
                 <span className="bg-gradient-to-r from-[#a78bfa] to-[#c084fc] bg-clip-text text-transparent">
-                  Habitat
+                  TIUM
                 </span>
               </h1>
             </div>

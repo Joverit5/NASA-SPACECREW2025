@@ -1,4 +1,4 @@
-# 🚀 SPACECREW2025 – Multiplayer Survival Habitat Game  
+# 🚀 SPATIUM – Multiplayer Survival Habitat Game  
 
 ![Tonoteam Banner](https://via.placeholder.com/1200x400.png?text=Tonoteam+Game+Banner)
 
@@ -10,7 +10,7 @@
 [![Stars](https://img.shields.io/github/stars/Joverit5/NASA-SPACECREW2025?style=social)](https://github.com/Joverit5/NASA-SPACECREW2025/stargazers)
 
 ## 🌌 Descripción  
-**SPACECREW2025** es un juego multijugador online en el que hasta **5 tripulantes** cooperan para sobrevivir dentro de un hábitat espacial.  
+**SPATIUM** es un juego multijugador online en el que hasta **5 tripulantes** cooperan para sobrevivir dentro de un hábitat espacial.  
 El equipo debe **gestionar recursos, asignar roles y comunicarse** eficazmente para superar niveles progresivamente más difíciles.  
 Cada nivel otorga **monedas** que permiten mejorar las instalaciones (granjas, minas, talleres de rovers) y ampliar el hábitat con nuevas funcionalidades.
 
