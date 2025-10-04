@@ -12,7 +12,9 @@ describe("ChatGateway (Sockets)", () => {
   beforeAll((done) => {
     httpServer = createServer();
     io = new Server(httpServer);
-    new ChatGateway(io); // inicializar gateway real
+    const { ChatService } = require("../src/chat/chat.service");
+    const chatService = new ChatService();
+    new ChatGateway(io, chatService); // inicializar gateway real
 
     httpServer.listen(() => {
       httpServerAddr = httpServer.address();
