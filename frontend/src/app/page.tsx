@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/Button"
 import { Terminal, Users, Zap, Globe } from "lucide-react"
 import { useEffect, useRef } from "react"
@@ -337,47 +338,47 @@ export default function HomePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6 max-w-6xl mx-auto px-2">
             {/* Team Member 1 */}
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-3 sm:p-4 text-center hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
-              <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden">
-                <img src="/astronaut-profile.jpg" alt="Team Member 1" className="w-full h-full object-cover" />
+              <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden relative">
+                <Image src="/JoseFernando.jpeg" alt="Team Member 1" fill className="object-cover" />
               </div>
-              <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">STUDENT NAME 1</p>
-              <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">student1@university.edu</p>
+              <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">José Fernando González Ortiz</p>
+              <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">joseortiz@utb.edu.co</p>
             </div>
 
             {/* Team Member 2 */}
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-3 sm:p-4 text-center hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
-              <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden">
-                <img src="/astronaut-profile.jpg" alt="Team Member 2" className="w-full h-full object-cover" />
+              <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden relative">
+                <Image src="/astronaut-profile.jpg" alt="Team Member 2" fill className="object-cover" />
               </div>
-              <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">STUDENT NAME 2</p>
-              <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">student2@university.edu</p>
+              <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">Santiago Quintero Pareja</p>
+              <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">squintero@utb.edu.co</p>
             </div>
 
             {/* Team Member 3 */}
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-3 sm:p-4 text-center hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
-              <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden">
-                <img src="/astronaut-profile.jpg" alt="Team Member 3" className="w-full h-full object-cover" />
+              <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden relative">
+                <Image src="/astronaut-profile.jpg" alt="Team Member 3" fill className="object-cover" />
               </div>
-              <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">STUDENT NAME 3</p>
-              <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">student3@university.edu</p>
+              <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">Isabella Sofía Arrieta Guardo</p>
+              <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">arrietai@utb.edu.co</p>
             </div>
 
             {/* Team Member 4 */}
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-3 sm:p-4 text-center hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
-              <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden">
-                <img src="/astronaut-profile.jpg" alt="Team Member 4" className="w-full h-full object-cover" />
+              <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden relative">
+                <Image src="/astronaut-profile.jpg" alt="Team Member 4" fill className="object-cover" />
               </div>
-              <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">STUDENT NAME 4</p>
-              <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">student4@university.edu</p>
+              <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">Fabián Camilo Quintero Pareja</p>
+              <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">parejaf@utb.edu.co</p>
             </div>
 
             {/* Team Member 5 */}
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-3 sm:p-4 text-center hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
-              <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden">
-                <img src="/astronaut-profile.jpg" alt="Team Member 5" className="w-full h-full object-cover" />
+              <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden relative">
+                <Image src="/astronaut-profile.jpg" alt="Team Member 5" fill className="object-cover" />
               </div>
-              <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">STUDENT NAME 5</p>
-              <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">student5@university.edu</p>
+              <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">Eduardo Alejandro Negrín Pérez</p>
+              <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">enegrin@utb.edu.co</p>
             </div>
           </div>
         </section>
@@ -387,6 +388,7 @@ export default function HomePage() {
       <footer className="relative z-10 border-t-2 border-blue-400/30 mt-12 sm:mt-20 bg-slate-900/50 backdrop-blur-[2px]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 text-center text-blue-400/60 text-xs sm:text-sm">
           <p>{">"} © 2025 SPATIUM. ALL SYSTEMS OPERATIONAL.</p>
+          <p className="mt-2 text-cyan-400/60">{">"} NASA SPACE APPS CHALLENGE 2025</p>
         </div>
       </footer>
     </div>
