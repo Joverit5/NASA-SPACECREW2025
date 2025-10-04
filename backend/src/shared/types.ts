@@ -5,6 +5,21 @@ export interface PlayerState {
   y: number;
   direction: Direction;
   connectedAt: number;
+  health: number;
+  oxygen: number;
+  hunger: number;
+  energy: number;
+  sanity: number;
+  fatigue: number;
+}
+
+export interface PlayerStatsPayload {
+  health: number;
+  oxygen: number;
+  hunger: number;
+  energy: number;
+  sanity: number;
+  fatigue: number;
 }
 
 // Estado completo del juego (todos los jugadores)
@@ -19,15 +34,16 @@ export interface PlayerMovePayload {
   direction: Direction;
 }
 
-// Direcciones posibles (puedes expandirlo con diagonales si usas 8 direcciones)
-export type Direction = "up" | "down" | "left" | "right" | "idle" | "up-left" | "up-right" | "down-left" | "down-right";
-
 // Eventos que puede emitir o recibir el cliente
 export interface ClientToServerEvents {
   "game:join": () => void;
   "player:move": (data: PlayerMovePayload) => void;
-  // evento de interacción? 
+  "player:update-stats": (data: PlayerStatsPayload) => void;
 }
+
+// Direcciones posibles (puedes expandirlo con diagonales si usas 8 direcciones)
+export type Direction = "up" | "down" | "left" | "right" | "idle" | "up-left" | "up-right" | "down-left" | "down-right";
+
 
 // Eventos que el servidor emite al cliente
 export interface ServerToClientEvents {
