@@ -1,11 +1,65 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card"
 import { Globe, Users, Zap, ArrowRight, Rocket } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { useState } from "react"
 
 export default function HomePage() {
+  const router = useRouter()
+  const supabase = createClient()
+  const [isCreating, setIsCreating] = useState(false)
+
+  const handleCreateRoom = async () => {
+    setIsCreating(true)
+    try {
+      // Generate a random player name for now
+      const playerName = `Player_${Math.floor(Math.random() * 10000)}`
+
+      // Create a new room
+      const { data: roomData, error: roomError } = await supabase
+        .from("rooms")
+        .insert({
+          status: "waiting",
+          max_players: 5,
+        })
+        .select()
+        .single()
+
+      if (roomError) throw roomError
+
+      // Create the player (creator) in the room
+      const { data: playerData, error: playerError } = await supabase
+        .from("players")
+        .insert({
+          room_id: roomData.id,
+          name: playerName,
+          is_ready: false,
+        })
+        .select()
+        .single()
+
+      if (playerError) throw playerError
+
+      // Update the room with the creator_id
+      const { error: updateError } = await supabase
+        .from("rooms")
+        .update({ creator_id: playerData.id })
+        .eq("id", roomData.id)
+
+      if (updateError) throw updateError
+
+      // Navigate to the room page
+      router.push(`/room/${roomData.id}?playerId=${playerData.id}`)
+    } catch (error) {
+      console.error("Error creating room:", error)
+      setIsCreating(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#1a1a4e] to-[#2d1b4e] text-white overflow-hidden relative">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -39,7 +93,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/lobby" className="w-full sm:w-auto">
+            <Link href="/pages/lobby" className="w-full sm:w-auto">
               <Button
                 size="lg"
                 className="w-full text-lg font-semibold px-10 py-6 bg-[#22d3ee] hover:bg-[#06b6d4] text-slate-900 shadow-lg shadow-cyan-500/50 transition-all tracking-wide cursor-pointer"
@@ -53,6 +107,8 @@ export default function HomePage() {
                 size="lg"
                 variant="outline"
                 className="w-full text-lg font-medium px-10 py-6 bg-transparent border-2 border-[#22d3ee]/50 text-[#22d3ee] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] transition-all tracking-wide cursor-pointer"
+                onClick={handleCreateRoom}
+                disabled={isCreating}
               >
                 Create room
                 <ArrowRight className="ml-2 h-5 w-5" />
