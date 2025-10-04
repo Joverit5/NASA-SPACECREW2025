@@ -79,7 +79,7 @@ export default function HomePage() {
             <Link href="#about" className="hover:text-cyan-400 transition-colors">
               {">"} ABOUT
             </Link>
-            <Link href="/lobby" className="hover:text-cyan-400 transition-colors">
+            <Link href="/pages/lobby" className="hover:text-cyan-400 transition-colors">
               {">"} PLAY NOW
             </Link>
           </div>
@@ -135,7 +135,7 @@ export default function HomePage() {
               size="lg"
               className="bg-blue-400 text-black hover:bg-blue-300 font-mono font-bold border-2 border-blue-400"
             >
-              <Link href="/lobby">
+              <Link href="/pages/lobby">
                 <Users className="w-5 h-5 mr-2" />
                 {">"} JOIN MISSION
               </Link>
@@ -263,7 +263,7 @@ export default function HomePage() {
               size="lg"
               className="bg-cyan-400 text-slate-900 hover:bg-cyan-300 font-mono font-bold border-2 border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.5)]"
             >
-              <Link href="/lobby">
+              <Link href="/pages/lobby">
                 <Terminal className="w-5 h-5 mr-2" />
                 {">"} LAUNCH MISSION
               </Link>
