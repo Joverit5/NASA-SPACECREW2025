@@ -91,8 +91,10 @@
       const input = document.getElementById("input");
       const sendBtn = document.getElementById("send");
 
+      // Unirse a la sala con nombre y ID
       socket.emit("join_session", { sessionId, player: { id: playerId, name: playerName } });
 
+      // Enviar mensaje
       sendBtn.onclick = () => {
         const text = input.value.trim();
         if (text === "") return;
@@ -100,11 +102,16 @@
         input.value = "";
       };
 
+      // Recibir mensajes
       socket.on("chat_message_broadcast", (msg) => {
         const div = document.createElement("div");
         div.classList.add("message");
         div.classList.add(msg.playerId === playerId ? "you" : "other");
-        div.textContent = msg.playerId === playerId ? `[Tú]: ${msg.text}` : `[${msg.playerId}]: ${msg.text}`;
+
+        // 🔹 Mostrar "Tú" si es propio mensaje, sino el nombre real
+        const label = msg.playerId === playerId ? "Tú" : msg.playerName;
+        div.textContent = `[${label}]: ${msg.text}`;
+
         messagesDiv.appendChild(div);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });

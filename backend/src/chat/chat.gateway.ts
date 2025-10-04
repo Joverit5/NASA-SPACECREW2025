@@ -6,13 +6,15 @@ export class ChatGateway {
   private io: Server;
   private chatService: ChatService;
 
-  // allow injecting a ChatService (useful for tests and shared instances)
+  // Nuevo mapa para relacionar socket.id -> { sessionId, playerName }
+  private socketPlayerMap: Map<string, { sessionId: string; playerName: string }> = new Map();
+
   constructor(io: Server, chatService?: ChatService) {
     this.io = io;
     this.chatService = chatService ?? new ChatService();
 
     this.io.on("connection", (socket: Socket) => {
-      console.log("🛰️ Nuevo cliente conectado:", socket.id);
+      console.log(`🛰️ Nuevo cliente conectado: ${socket.id}`);
 
       // 🟢 Evento: Unirse a sala
       socket.on("join_session", ({ sessionId, player }) => {
@@ -21,6 +23,12 @@ export class ChatGateway {
             socket.emit("chat_error", { message: "Datos de sesión inválidos" });
             return;
           }
+
+          // Guardar jugador en ChatService
+          this.chatService.addPlayer(sessionId, player.id, player.name);
+
+          // Guardar relación socket -> playerName + sessionId
+          this.socketPlayerMap.set(socket.id, { sessionId, playerName: player.name });
 
           socket.join(sessionId);
           console.log(`${player.name} (${socket.id}) se unió a la sala ${sessionId}`);
@@ -48,16 +56,18 @@ export class ChatGateway {
           const cleanText = text.trim();
           if (cleanText.length === 0 || cleanText.length > 500) return;
 
+          const player = this.chatService.getPlayer(sessionId, playerId);
+          const playerName = player.name;
+
           const msg: ChatMessage = {
             playerId,
+            playerName,
             text: cleanText,
             time: new Date().toISOString(),
           };
 
-          // Guardar en memoria
           this.chatService.addMessage(sessionId, msg);
 
-          // Enviar a todos los jugadores en la sala
           this.io.to(sessionId).emit("chat_message_broadcast", msg);
         } catch (err) {
           console.error("❌ Error al enviar mensaje:", err);
@@ -67,7 +77,13 @@ export class ChatGateway {
 
       // 🔴 Evento: Desconexión
       socket.on("disconnect", () => {
-        console.log("🚪 Cliente desconectado:", socket.id);
+        const info = this.socketPlayerMap.get(socket.id);
+        if (info) {
+          console.log(`🚪 Cliente desconectado: ${socket.id} (${info.playerName})`);
+          this.socketPlayerMap.delete(socket.id);
+        } else {
+          console.log(`🚪 Cliente desconectado: ${socket.id}`);
+        }
       });
     });
 

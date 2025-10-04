@@ -1,34 +1,53 @@
 import { ChatMessage } from "./chat.types";
 
-export class ChatService {
-  private sessions = new Map<string, ChatMessage[]>();
+interface Session {
+  messages: ChatMessage[];
+  players: Record<string, string>; // playerId -> name
+}
 
+export class ChatService {
+  private sessions: Record<string, Session> = {}; // Unifica sesiones y jugadores
+
+  // Agregar un jugador a la sesión
+  addPlayer(sessionId: string, playerId: string, name: string) {
+    if (!this.sessions[sessionId]) this.sessions[sessionId] = { messages: [], players: {} };
+    this.sessions[sessionId].players[playerId] = name;
+  }
+
+  // Obtener info de un jugador
+  getPlayer(sessionId: string, playerId: string) {
+    return { name: this.sessions[sessionId]?.players[playerId] || "Jugador" };
+  }
+
+  // Agregar mensaje a la sesión
   addMessage(sessionId: string, msg: ChatMessage): void {
-    const messages = this.sessions.get(sessionId) || [];
+    if (!this.sessions[sessionId]) this.sessions[sessionId] = { messages: [], players: {} };
+    const messages = this.sessions[sessionId].messages;
     messages.push(msg);
     if (messages.length > 100) messages.shift(); // mantener últimos 100
-    this.sessions.set(sessionId, messages);
   }
 
+  // Obtener historial de mensajes
   getMessages(sessionId: string): ChatMessage[] {
-    return this.sessions.get(sessionId) || [];
+    return this.sessions[sessionId]?.messages || [];
   }
 
-  // Devuelve las sesiones activas: id y número de mensajes (o tamaño)
+  // Devuelve sesiones activas
   getAllSessions(): Array<{ id: string; size: number }> {
     const res: Array<{ id: string; size: number }> = [];
-    this.sessions.forEach((messages, id) => {
-      res.push({ id, size: messages.length });
-    });
+    for (const id in this.sessions) {
+      res.push({ id, size: this.sessions[id].messages.length });
+    }
     return res;
   }
 
+  // Limpieza de sesiones vacías
   cleanupEmptySessions(io: any) {
-    this.sessions.forEach((_, sessionId) => {
+    for (const sessionId in this.sessions) {
       const room = io.sockets.adapter.rooms.get(sessionId);
       if (!room || room.size === 0) {
-        this.sessions.delete(sessionId);
+        delete this.sessions[sessionId];
       }
-    });
+    }
   }
 }
