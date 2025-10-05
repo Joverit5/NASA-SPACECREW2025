@@ -1,5 +1,6 @@
 export interface InternalPlayer {
   id: string;
+  name: string;
   x: number;
   y: number;
   connectedAt: number;

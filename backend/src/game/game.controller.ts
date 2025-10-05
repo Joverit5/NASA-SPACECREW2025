@@ -15,10 +15,8 @@ export class GameController {
       this.gameService.broadcastState(this.io);
     });
 
-    socket.on("player:update-stats", (data) => {
-      this.gameService.updatePlayerStats(socket.id, data);
-      this.gameService.broadcastState(this.io);
-    });
+    // Removido: player:update-stats (ahora solo el servidor modifica stats)
+    // Las stats solo se actualizan desde eventos/misiones en el servidor
 
     socket.on("disconnect", () => {
       this.gameService.removePlayer(socket.id);

@@ -25,13 +25,21 @@ export class GameService {
 
     // Actualizar el tiempo cada segundo
     this.gameTimer = setInterval(() => {
-      this.state.gameTime = Math.floor((Date.now() - this.state.startedAt!) / 1000);
-      //this.checkTimeBasedEvents(io);
+      try {
+        this.state.gameTime = Math.floor((Date.now() - this.state.startedAt!) / 1000);
+        this.checkTimeBasedEvents(io);
+      } catch (error) {
+        console.error("❌ Error en gameTimer:", error);
+      }
     }, 1000);
 
     // Broadcast del estado cada 5 segundos para sincronizar tiempo
     this.eventCheckInterval = setInterval(() => {
-      this.broadcastStateImmediate(io);
+      try {
+        this.broadcastStateImmediate(io);
+      } catch (error) {
+        console.error("❌ Error en eventCheckInterval:", error);
+      }
     }, 5000);
   }
 
@@ -51,7 +59,7 @@ export class GameService {
   getGameTime(): number {
     return this.state.gameTime;
   }
-  /*
+
   // 🎯 Sistema de Eventos basados en Tiempo
   private checkTimeBasedEvents(io: Server) {
     const time = this.state.gameTime;
@@ -102,11 +110,12 @@ export class GameService {
     console.log("📉 Stats degradadas por el tiempo");
     this.broadcastStateImmediate(io);
   }
-  */
+
   // 🔧 Métodos existentes (sin cambios)
   addPlayer(id: string, data: Partial<PlayerState> = {}) {
     this.state.players[id] = {
       id,
+      name: data.name || `Player_${id.substring(0, 5)}`,
       x: data.x ?? 0,
       y: data.y ?? 0,
       direction: data.direction ?? "idle",
@@ -120,8 +129,8 @@ export class GameService {
     };
 
     // Iniciar el timer cuando se conecta el primer jugador
-    if (Object.keys(this.state.players).length === 1) {
-      this.startGameTimer(this.getIoInstance());
+    if (Object.keys(this.state.players).length === 1 && this.ioInstance) {
+      this.startGameTimer(this.ioInstance);
     }
   }
 
@@ -133,16 +142,65 @@ export class GameService {
     player.direction = data.direction;
   }
 
-  updatePlayerStats(id: string, data: PlayerStatsPayload) {
+  // Nuevo: Actualizar stat individual de un jugador
+  updatePlayerStat(playerId: string, stat: keyof PlayerStatsPayload, delta: number) {
+    const player = this.state.players[playerId];
+    if (!player) return;
+
+    const oldValue = player[stat];
+    player[stat] = this.clamp(player[stat] + delta, 0, 100);
+    
+    console.log(`📊 Stat update: ${playerId} ${stat} ${oldValue} -> ${player[stat]} (delta: ${delta})`);
+  }
+
+  // Nuevo: Actualizar múltiples stats de un jugador
+  updatePlayerStats(id: string, data: Partial<PlayerStatsPayload>) {
     const player = this.state.players[id];
     if (!player) return;
 
-    player.health = this.clamp(data.health, 0, 100);
-    player.oxygen = this.clamp(data.oxygen, 0, 100);
-    player.hunger = this.clamp(data.hunger, 0, 100);
-    player.energy = this.clamp(data.energy, 0, 100);
-    player.sanity = this.clamp(data.sanity, 0, 100);
-    player.fatigue = this.clamp(data.fatigue, 0, 100);
+    if (data.health !== undefined) player.health = this.clamp(data.health, 0, 100);
+    if (data.oxygen !== undefined) player.oxygen = this.clamp(data.oxygen, 0, 100);
+    if (data.hunger !== undefined) player.hunger = this.clamp(data.hunger, 0, 100);
+    if (data.energy !== undefined) player.energy = this.clamp(data.energy, 0, 100);
+    if (data.sanity !== undefined) player.sanity = this.clamp(data.sanity, 0, 100);
+    if (data.fatigue !== undefined) player.fatigue = this.clamp(data.fatigue, 0, 100);
+  }
+
+  // Nuevo: Obtener stats de un jugador
+  getPlayerStats(playerId: string): PlayerStatsPayload | null {
+    const player = this.state.players[playerId];
+    if (!player) return null;
+
+    return {
+      health: player.health,
+      oxygen: player.oxygen,
+      hunger: player.hunger,
+      energy: player.energy,
+      sanity: player.sanity,
+      fatigue: player.fatigue,
+    };
+  }
+
+  // Nuevo: Aplicar efectos de eventos/misiones a stats
+  applyStatsEffects(playerId: string, effects: Partial<Record<keyof PlayerStatsPayload, number>>) {
+    const player = this.state.players[playerId];
+    if (!player) {
+      console.warn(`⚠️ Cannot apply effects: player ${playerId} not found`);
+      return;
+    }
+
+    console.log(`🎯 Applying effects to ${playerId}:`, effects);
+
+    for (const [stat, delta] of Object.entries(effects)) {
+      if (delta && typeof player[stat as keyof PlayerStatsPayload] === 'number') {
+        this.updatePlayerStat(playerId, stat as keyof PlayerStatsPayload, delta);
+      }
+    }
+
+    // Broadcast cambios inmediatamente
+    if (this.ioInstance) {
+      this.broadcastStateImmediate(this.ioInstance);
+    }
   }
 
   removePlayer(id: string) {
@@ -156,6 +214,11 @@ export class GameService {
 
   getState() {
     return this.state;
+  }
+
+  // Nuevo: Obtener un jugador específico
+  getPlayer(playerId: string): PlayerState | null {
+    return this.state.players[playerId] || null;
   }
 
   broadcastState(io: Server) {

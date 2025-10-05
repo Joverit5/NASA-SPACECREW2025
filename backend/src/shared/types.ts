@@ -1,11 +1,13 @@
 // Representa un jugador en el juego
 export interface PlayerState {
   id: string;
+  name: string;
   x: number;
   y: number;
   direction: Direction;
   connectedAt: number;
-  health: number;
+  // Stats del jugador (0-100)
+  health: number;    // hp en el cliente
   oxygen: number;
   hunger: number;
   energy: number;
@@ -20,6 +22,14 @@ export interface PlayerStatsPayload {
   energy: number;
   sanity: number;
   fatigue: number;
+}
+
+// Payload para actualizar stats individuales desde el servidor
+export interface StatUpdatePayload {
+  playerId: string;
+  stat: keyof PlayerStatsPayload;
+  value: number;
+  delta?: number; // opcional: cuánto cambió
 }
 
 // Estado completo del juego (todos los jugadores + tiempo global)
@@ -48,7 +58,7 @@ export interface GameEvent {
 export interface ClientToServerEvents {
   "game:join": () => void;
   "player:move": (data: PlayerMovePayload) => void;
-  "player:update-stats": (data: PlayerStatsPayload) => void;
+  "player:update-stats": (data: PlayerStatsPayload) => void; // Depricado
 }
 
 // Direcciones posibles
