@@ -151,6 +151,7 @@
     const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const SERVER_URL = isLocal ? (location.origin) : location.origin;
     const socket = io(SERVER_URL);
+    window.socket = socket; 
 
     const sessionId = "sala-demo";
 
@@ -532,6 +533,133 @@
         <div class="stat-item">O2: ${pd.oxygen}%</div>
       `;
     }
+
+    // ============================================
+    // SISTEMA DE EVENTOS DE SIMULACIÓN
+    // ============================================
+    const eventsContainer = document.createElement('div');
+    eventsContainer.id = 'events-display';
+    eventsContainer.style.cssText = `
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px);
+      border-radius: 10px;
+      padding: 12px;
+      z-index: 40;
+      color: #eaf6ff;
+    `;
+    document.getElementById('game-wrapper').appendChild(eventsContainer);
+
+    const activeEventsMap = new Map();
+
+    // Escuchar cuando un evento es disparado
+    socket.on('event:triggered', (event) => {
+      console.log('Event triggered:', event);
+      activeEventsMap.set(event.id, event);
+      updateEventsUI();
+      
+      // Agregar al log
+      addEventToLog(`${event.config.icon} ${event.config.name}`);
+      
+      // Efecto visual
+      const scene = game.scene.scenes[0];
+      if (scene && scene.cameras) {
+        scene.cameras.main.flash(300, 255, 100, 100);
+      }
+    });
+
+    // Escuchar cuando un evento se resuelve
+    socket.on('event:resolved', (data) => {
+      console.log('Event resolved:', data);
+      activeEventsMap.delete(data.eventId);
+      updateEventsUI();
+      addEventToLog(`✅ Evento resuelto`);
+    });
+
+    // Actualizar UI de eventos activos
+    function updateEventsUI() {
+      const container = eventsContainer;
+      
+      if (activeEventsMap.size === 0) {
+        container.innerHTML = '<div style="text-align:center; color:#9aa7b2; font-size:12px;">Sin eventos activos</div>';
+        return;
+      }
+
+      let html = '<div style="font-weight:700; margin-bottom:8px; color:#66ccff;">📡 Eventos Activos</div>';
+      
+      activeEventsMap.forEach((event, eventId) => {
+        const timeLeft = Math.max(0, Math.ceil((event.endTime - Date.now()) / 1000));
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        
+        html += `
+          <div style="
+            background: rgba(255,255,255,0.05);
+            border-left: 3px solid #${event.config.color.toString(16)};
+            padding: 8px;
+            margin: 6px 0;
+            border-radius: 6px;
+            font-size: 12px;
+          ">
+            <div style="font-weight:700; margin-bottom:4px;">
+              ${event.config.icon} ${event.config.name}
+            </div>
+            <div style="color:#9aa7b2; font-size:11px; margin-bottom:4px;">
+              ${event.config.description}
+            </div>
+            <div style="color:#ffd93d; font-size:11px;">
+              ⏱️ ${minutes}:${seconds.toString().padStart(2, '0')}
+            </div>
+            ${event.config.requiresPlayerAction ? `
+              <button onclick="window.resolveEvent('${eventId}')" style="
+                margin-top: 6px;
+                background: #66ccff;
+                border: none;
+                padding: 4px 8px;
+                border-radius: 4px;
+                color: #000;
+                font-size: 11px;
+                cursor: pointer;
+                font-weight: 700;
+              ">Resolver</button>
+            ` : ''}
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    // Función global para resolver eventos
+    window.resolveEvent = function(eventId) {
+      console.log('Resolviendo evento:', eventId);
+      socket.emit('event:resolve', { eventId });
+    };
+
+    // Solicitar eventos activos al conectar
+    socket.on('connect', () => {
+      setTimeout(() => {
+        socket.emit('event:get_active');
+      }, 500);
+    });
+
+    // Recibir lista de eventos activos
+    socket.on('event:active_list', (events) => {
+      console.log('Active events received:', events);
+      activeEventsMap.clear();
+      events.forEach(event => {
+        activeEventsMap.set(event.id, event);
+      });
+      updateEventsUI();
+    });
+
+    // Inicializar UI
+    updateEventsUI();
 
     window._spatium = { socket };
 

@@ -58,7 +58,13 @@ export interface GameEvent {
 export interface ClientToServerEvents {
   "game:join": () => void;
   "player:move": (data: PlayerMovePayload) => void;
-  "player:update-stats": (data: PlayerStatsPayload) => void; // Depricado
+  "player:update-stats": (data: PlayerStatsPayload) => void; // Deprecado - ahora solo el servidor modifica stats
+  "simulation:start": () => void; // Iniciar sistemas de simulación
+  "simulation:stop": () => void; // Detener sistemas de simulación
+  "event:resolve": (data: { eventId: string }) => void; // Resolver evento manualmente
+  "event:get_active": () => void; // Obtener eventos activos
+  "event:get_history": () => void; // Obtener historial
+  "event:force": (data: { eventType: string }) => void; // Debug: forzar evento
 }
 
 // Direcciones posibles
