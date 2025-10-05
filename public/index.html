@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NASA Space Apps 2025 - Habitat Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: #0a0e27;
+      color: #e0f7ff;
+      overflow-x: hidden;
+    }
+    
+    .wrap {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    #game {
+      width: 640px;
+      height: 640px;
+      margin: 0 auto;
+      border: 2px solid #00d9ff;
+      box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+      position: relative;
+    }
+    
+    .start-sim-btn {
+      margin: 16px auto;
+      display: block;
+      padding: 12px 32px;
+      background: linear-gradient(135deg, #00d9ff 0%, #0099cc 100%);
+      color: #0a0e27;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: 'Orbitron', sans-serif;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 217, 255, 0.4);
+    }
+    
+    .start-sim-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 217, 255, 0.6);
+    }
+    
+    #debug {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #1a1f3a;
+      border: 1px solid #2d3561;
+      border-radius: 8px;
+    }
+    
+    #debug h3 {
+      font-family: 'Orbitron', sans-serif;
+      color: #00d9ff;
+      margin-bottom: 12px;
+      font-size: 20px;
+    }
+    
+    #debug p {
+      color: #8899aa;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+    
+    #state {
+      background: #0b0b0b;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 12px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #4CAF50;
+    }
+    
+    #log {
+      background: #0b0b0b;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 12px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #4CAF50;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    
+    .notice {
+      margin: 12px 0;
+      padding: 10px 20px;
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    
+    .notice:hover {
+      background: #ff5252;
+      transform: translateY(-1px);
+    }
+    
+    .debug-note {
+      margin-top: 16px;
+      padding: 12px;
+      background: #2d3561;
+      border-left: 4px solid #00d9ff;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .debug-note strong {
+      color: #00d9ff;
+    }
+    
+    .debug-note code {
+      background: #0b0b0b;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      color: #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="game" aria-label="Phaser Game container"></div>
+
+    <div style="text-align:center;">
+      <button id="btn_start_sim_html" class="start-sim-btn">Start Simulation</button>
+    </div>
+
+    <div id="event-notifications"></div>
+
+    <div id="debug">
+      <h3>🚀 DEBUG / CONTROLS</h3>
+      <p>Use arrow keys or WASD to move the sprite. Drag items from the toolbar to place areas. Click "Start Simulation" to transition to isometric view.</p>
+
+      <div id="state">[- waiting for state -]</div>
+      <pre id="log">Console log will appear here (useful messages from the client)</pre>
+
+      <button id="btn_show_console" class="notice">ABRIR CONSOLA DEL NAVEGADOR</button>
+      <div class="debug-note">
+        <strong>Nota:</strong> los scripts deben cargarse en este orden: <code>Phaser</code> → <code>socket.io</code> → <code>events.js</code> → <code>missions.js</code> → <code>main.js</code>.
+      </div>
+    </div>
+  </div>
+
+   Scripts en orden correcto 
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/events.js"></script>
+  <script src="/missions.js"></script>
+  <script src="/budgetSystem.js"></script>
+  <script src="/main.js"></script>
+
+  <script>
+    // Bind HTML Start Simulation button
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('btn_start_sim_html')
+      if (btn) {
+        btn.addEventListener('click', () => {
+          try {
+            if (typeof startIsometricTransition === 'function') {
+              startIsometricTransition()
+            }
+          } catch(e) {
+            console.warn('startIsometricTransition not available yet', e)
+          }
+        })
+      }
+
+      // Console button
+      document.getElementById('btn_show_console').addEventListener('click', () => {
+        alert('Abre la consola con F12 (Windows/Linux) o Cmd+Option+I (macOS). Revisa la pestaña "Console" y la pestaña "Network" para ver errores y 404s.');
+      });
+    })
+
+    // Runtime dependency checks
+    ;(function checkDeps(){
+      const log = (m) => {
+        const el = document.getElementById('log');
+        if (el) el.innerText = `${new Date().toLocaleTimeString()} - ${m}\n` + el.innerText;
+      };
+      
+      if (typeof Phaser === 'undefined') {
+        log('ERROR: Phaser no está cargado. Revisa la URL del CDN.');
+      } else {
+        log('Phaser OK: v' + (Phaser.VERSION || 'unknown'));
+      }
+
+      if (typeof io === 'undefined') {
+        log('AVISO: socket.io cliente no cargado. Asegúrate que el servidor esté sirviendo /socket.io/socket.io.js');
+      } else {
+        log('socket.io OK');
+      }
+
+      if (typeof window._eventsLoaded === 'undefined') {
+        log('AVISO: events.js no parece inicializarse correctamente.');
+      } else {
+        log('events.js indica que arrancó correctamente.');
+      }
+
+      if (!window._missionsLoaded) {
+        log('AVISO: missions.js no parece inicializarse correctamente.');
+      } else {
+        log('missions.js indica que arrancó correctamente.');
+      }
+
+      if (!window._mainLoaded) {
+        log('AVISO: main.js no parece inicializarse correctamente.');
+      } else {
+        log('main.js indica que arrancó correctamente.');
+      }
+    })();
+  </script>
+</body>
+</html>
