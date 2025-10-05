@@ -21,5 +21,5 @@ httpServer.listen(4000, () => {
 });
 
 app.get("/", (req, res) => {
-  res.send("🚀 Servidor backend de NASA-SPACECREW2025 funcionando correctamente!");
+  res.send("🚀 Servidor backend de NASA-SPATIUM funcionando correctamente!");
 });
