@@ -1,0 +1,25 @@
+{
+  "name": "phaser-multiplayer-backend",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "test": "jest --passWithNoTests --detectOpenHandles",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "http": "^0.0.1-security",
+    "phaser": "^3.90.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
