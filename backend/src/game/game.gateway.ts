@@ -9,6 +9,7 @@ export function createGameGateway(httpServer: http.Server) {
   });
 
   const gameService = new GameService();
+  gameService.setIoInstance(io); // ← Inyectar io para el timer
 
   io.on("connection", (socket) => {
     console.log(`Player connected: ${socket.id}`);
