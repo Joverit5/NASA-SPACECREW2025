@@ -3,6 +3,8 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import path from "path";
 
+
+
 // Importaciones opcionales con manejo de errores
 let ChatGateway, chatRouter, chatService;
 try {
@@ -32,6 +34,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(express.static(path.join(__dirname, "../public")));
 // Rutas de API (solo si existe chat)
 if (chatRouter) {
   app.use("/api/chat", chatRouter);

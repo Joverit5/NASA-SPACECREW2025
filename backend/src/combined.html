@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -9,20 +10,27 @@
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
   <style>
-    :root{
+    :root {
       --bg: #0a0a14;
       --panel: #0f2130;
       --muted: #9aa7b2;
       --accent: #66ccff;
       --sidebar-width: 380px;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html,body{
-      height:100%;
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
       font-family: "Segoe UI", Roboto, system-ui, sans-serif;
       background: var(--bg);
       color: #e6eef6;
-      -webkit-font-smoothing:antialiased;
+      -webkit-font-smoothing: antialiased;
       overflow: hidden;
     }
 
@@ -59,8 +67,9 @@
 
     /* Tiempo de juego */
     #game-time-section {
-      background: rgba(0,0,0,0.3);
+      background: rgba(0, 0, 0, 0.3);
     }
+
     #gameTime {
       font-size: 32px;
       font-weight: bold;
@@ -71,8 +80,9 @@
 
     /* Stats del jugador */
     #stats-section {
-      background: rgba(0,0,0,0.2);
+      background: rgba(0, 0, 0, 0.2);
     }
+
     .stat-row {
       display: flex;
       justify-content: space-between;
@@ -80,9 +90,11 @@
       padding: 6px 0;
       font-size: 13px;
     }
+
     .stat-label {
       color: var(--muted);
     }
+
     .stat-value {
       color: #fff;
       font-weight: bold;
@@ -94,6 +106,7 @@
       min-height: 200px;
       overflow-y: auto;
     }
+
     .mission-card {
       background: #1a1f3a;
       border: 2px solid #666;
@@ -102,37 +115,45 @@
       margin-bottom: 8px;
       font-size: 12px;
     }
+
     .mission-card.active {
       background: #2a2a00;
       border-color: #ffd93d;
     }
+
     .mission-card.completed {
       background: #1a3a1a;
       border-color: #4CAF50;
     }
+
     .mission-header {
       display: flex;
       justify-content: space-between;
       margin-bottom: 4px;
     }
+
     .mission-name {
       font-weight: bold;
       font-size: 13px;
     }
+
     .mission-status {
       font-size: 10px;
       opacity: 0.8;
     }
+
     .mission-description {
       color: var(--muted);
       margin-bottom: 4px;
       font-size: 11px;
     }
+
     .mission-area {
       color: var(--accent);
       font-size: 11px;
       margin-bottom: 4px;
     }
+
     .mission-progress-bar {
       background: #0b0b0b;
       border-radius: 3px;
@@ -140,17 +161,21 @@
       overflow: hidden;
       margin-bottom: 2px;
     }
+
     .mission-progress-fill {
       height: 100%;
       background: linear-gradient(90deg, #666, #888);
       transition: width 0.3s;
     }
+
     .mission-card.active .mission-progress-fill {
       background: linear-gradient(90deg, #ffd93d, #ffed4e);
     }
+
     .mission-card.completed .mission-progress-fill {
       background: linear-gradient(90deg, #4CAF50, #66bb6a);
     }
+
     .mission-progress-text {
       font-size: 10px;
       text-align: right;
@@ -162,27 +187,32 @@
       max-height: 250px;
       overflow-y: auto;
     }
+
     .event-card {
-      background: rgba(255,255,255,0.05);
+      background: rgba(255, 255, 255, 0.05);
       border-left: 3px solid var(--accent);
       padding: 8px;
       margin-bottom: 6px;
       border-radius: 4px;
       font-size: 12px;
     }
+
     .event-header {
       font-weight: bold;
       margin-bottom: 4px;
     }
+
     .event-description {
       color: var(--muted);
       font-size: 11px;
       margin-bottom: 4px;
     }
+
     .event-timer {
       color: #ffd93d;
       font-size: 11px;
     }
+
     .event-resolve-btn {
       margin-top: 4px;
       background: var(--accent);
@@ -201,9 +231,10 @@
       overflow-y: auto;
       font-size: 11px;
     }
+
     .log-item {
       padding: 4px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       color: var(--muted);
     }
 
@@ -239,6 +270,7 @@
       box-shadow: 0 0 30px rgba(0, 217, 255, 0.6);
       transition: all 0.3s ease;
     }
+
     #start-sim-btn:hover {
       transform: translate(-50%, -50%) scale(1.05);
       box-shadow: 0 0 40px rgba(0, 217, 255, 0.8);
@@ -263,6 +295,7 @@
       margin-bottom: 8px;
       font-size: 14px;
     }
+
     #status {
       font-size: 11px;
       color: var(--muted);
@@ -271,27 +304,44 @@
 
     #messages {
       flex: 1;
-      background: rgba(10,16,24,0.6);
+      background: rgba(10, 16, 24, 0.6);
       border-radius: 6px;
       padding: 8px;
       overflow-y: auto;
       font-size: 12px;
     }
+
     .message {
       margin: 4px 0;
       padding: 6px;
       border-radius: 4px;
       word-break: break-word;
     }
-    .you { background: #052f2a; color: #bfffe6; }
-    .other { background: #372a10; color: #ffd97a; }
-    .system { text-align: center; color: var(--muted); font-style: italic; background: transparent; padding: 4px; }
+
+    .you {
+      background: #052f2a;
+      color: #bfffe6;
+    }
+
+    .other {
+      background: #372a10;
+      color: #ffd97a;
+    }
+
+    .system {
+      text-align: center;
+      color: var(--muted);
+      font-style: italic;
+      background: transparent;
+      padding: 4px;
+    }
 
     #input-container {
       display: flex;
       gap: 6px;
       margin-top: 6px;
     }
+
     #chat-input {
       flex: 1;
       padding: 8px;
@@ -301,6 +351,7 @@
       color: #eaf6ff;
       font-size: 12px;
     }
+
     #chat-send {
       background: var(--accent);
       border: none;
@@ -317,9 +368,11 @@
       width: 6px;
       height: 6px;
     }
+
     ::-webkit-scrollbar-track {
-      background: rgba(0,0,0,0.2);
+      background: rgba(0, 0, 0, 0.2);
     }
+
     ::-webkit-scrollbar-thumb {
       background: var(--accent);
       border-radius: 3px;
@@ -327,10 +380,13 @@
 
     /* Responsive */
     @media (max-width: 1200px) {
-      :root { --sidebar-width: 320px; }
+      :root {
+        --sidebar-width: 320px;
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="main-container">
     <!-- SIDEBAR IZQUIERDO -->
@@ -366,7 +422,8 @@
 
       <!-- Misiones -->
       <div id="missions-section" class="sidebar-section">
-        <div class="section-title">📋 Misiones <span id="mission-counter" style="font-size:12px;opacity:0.7;">(0/0)</span></div>
+        <div class="section-title">📋 Misiones <span id="mission-counter"
+            style="font-size:12px;opacity:0.7;">(0/0)</span></div>
         <div id="missions-list">
           <div style="text-align:center; color:#9aa7b2; font-size:12px; padding:20px;">
             Sin misiones asignadas
@@ -395,19 +452,6 @@
     <div id="game-area">
       <div id="game-container">
         <button id="start-sim-btn">🚀 Iniciar Simulación</button>
-        <button id="toggle-view-btn" style="
-          position: absolute;
-          top: 20px;
-          right: 20px;
-          padding: 8px 16px;
-          background: #66ccff;
-          border: none;
-          border-radius: 6px;
-          font-weight: bold;
-          color: #000;
-          cursor: pointer;
-          z-index: 900;
-        ">Cambiar Vista</button>
       </div>
 
       <!-- Chat en la parte inferior -->
@@ -426,184 +470,185 @@
   </div>
 
   <script>
-  (function(){
-    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-    const SERVER_URL = isLocal ? (location.origin) : location.origin;
-    const socket = io(SERVER_URL);
-    window.socket = socket;
+    document.addEventListener("DOMContentLoaded", () => {
+      const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+      const SERVER_URL = isLocal ? (location.origin) : location.origin;
+      const socket = io(SERVER_URL);
 
-    const sessionId = "sala-demo";
 
-    const statusDiv = document.getElementById("status");
-    const messagesDiv = document.getElementById("messages");
-    const inputEl = document.getElementById("chat-input");
-    const sendBtn = document.getElementById("chat-send");
 
-    const gameTimeEl = document.getElementById("gameTime");
-    const eventList = document.getElementById("eventList");
+      const sessionId = "sala-demo";
 
-    let playerId = null;
-    let playerName = null;
-    let isConnected = false;
-    let isJoining = false;
-    let simulationStarted = false;
-    let playerAlive = true;
-    let currentMission = null;
-    const missionOwnership = {};
-    let warningTimeout = null;
+      const statusDiv = document.getElementById("status");
+      const messagesDiv = document.getElementById("messages");
+      const inputEl = document.getElementById("chat-input");
+      const sendBtn = document.getElementById("chat-send");
 
-    const placedAreas = new Set();
-    const playerRoles = ['crew_medic'];
+      const gameTimeEl = document.getElementById("gameTime");
+      const eventList = document.getElementById("eventList");
 
-    function promptForName(){
-      let name = prompt("Tu nombre (1-20 caracteres):");
-      if (!name) return promptForName();
-      name = name.trim();
-      if (name.length === 0 || name.length > 20) return promptForName();
-      return name;
-    }
+      let playerId = null;
+      let playerName = null;
+      let isConnected = false;
+      let isJoining = false;
+      let simulationStarted = false;
+      let playerAlive = true;
+      let currentMission = null;
+      const missionOwnership = {};
+      let warningTimeout = null;
 
-    function setStatus(text, cls = ''){
-      statusDiv.textContent = text;
-      statusDiv.className = cls;
-    }
+      const placedAreas = new Set();
+      const playerRoles = ['crew_medic'];
 
-    function addSystem(text){
-      const d = document.createElement('div');
-      d.className = 'message system';
-      d.textContent = text;
-      messagesDiv.appendChild(d);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
+      function promptForName() {
+        let name = prompt("Tu nombre (1-20 caracteres):");
+        if (!name) return promptForName();
+        name = name.trim();
+        if (name.length === 0 || name.length > 20) return promptForName();
+        return name;
+      }
 
-    function addMessage(msg){
-      const d = document.createElement('div');
-      d.className = 'message ' + (msg.playerId === playerId ? 'you' : 'other');
-      d.textContent = (msg.playerId === playerId ? '[Tu] ' : `[${msg.playerName}] `) + msg.text;
-      messagesDiv.appendChild(d);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
+      function setStatus(text, cls = '') {
+        statusDiv.textContent = text;
+        statusDiv.className = cls;
+      }
 
-    function showError(text){
-      const d = document.createElement('div');
-      d.className = 'message system';
-      d.style.color = '#ff6b6b';
-      d.textContent = '❌ ' + text;
-      messagesDiv.appendChild(d);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
+      function addSystem(text) {
+        const d = document.createElement('div');
+        d.className = 'message system';
+        d.textContent = text;
+        messagesDiv.appendChild(d);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
 
-    function attemptJoin(name){
-      if (isJoining) return;
-      isJoining = true;
-      setStatus(`Conectando como ${name}...`);
-      socket.emit('join_session', { sessionId, player: { name } });
-    }
+      function addMessage(msg) {
+        const d = document.createElement('div');
+        d.className = 'message ' + (msg.playerId === playerId ? 'you' : 'other');
+        d.textContent = (msg.playerId === playerId ? '[Tu] ' : `[${msg.playerName}] `) + msg.text;
+        messagesDiv.appendChild(d);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
 
-    socket.on('connect', () => {
-      console.log('socket connected', socket.id);
-      playerName = promptForName();
-      attemptJoin(playerName);
-    });
+      function showError(text) {
+        const d = document.createElement('div');
+        d.className = 'message system';
+        d.style.color = '#ff6b6b';
+        d.textContent = '❌ ' + text;
+        messagesDiv.appendChild(d);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
 
-    socket.on('join_success', (data) => {
-      playerId = data.playerId;
-      isConnected = true;
-      isJoining = false;
-      setStatus(`Conectado: ${data.playerName}`, 'connected');
-      inputEl.disabled = false;
-      sendBtn.disabled = false;
-      addSystem(`Te has unido a ${data.sessionId} como ${data.playerName}`);
-    });
+      function attemptJoin(name) {
+        if (isJoining) return;
+        isJoining = true;
+        setStatus(`Conectando como ${name}...`);
+        socket.emit('join_session', { sessionId, player: { name } });
+      }
 
-    socket.on('join_rejected', (data) => {
-      isJoining = false;
-      showError(data.message);
-      setStatus(data.message, 'error');
-      if (data.reason === 'room_full') {
+      socket.on('connect', () => {
+        console.log('socket connected', socket.id);
+        playerName = promptForName();
+        attemptJoin(playerName);
+      });
+
+      socket.on('join_success', (data) => {
+        playerId = data.playerId;
+        isConnected = true;
+        isJoining = false;
+        setStatus(`Conectado: ${data.playerName}`, 'connected');
+        inputEl.disabled = false;
+        sendBtn.disabled = false;
+        addSystem(`Te has unido a ${data.sessionId} como ${data.playerName}`);
+      });
+
+      socket.on('join_rejected', (data) => {
+        isJoining = false;
+        showError(data.message);
+        setStatus(data.message, 'error');
+        if (data.reason === 'room_full') {
+          inputEl.disabled = true;
+          sendBtn.disabled = true;
+          addSystem("Sala llena. Intenta mas tarde.");
+          setTimeout(() => socket.disconnect(), 400);
+          return;
+        }
+        if (data.reason === 'name_taken') {
+          setTimeout(() => {
+            const newName = promptForName();
+            attemptJoin(newName);
+          }, 300);
+        }
+      });
+
+      socket.on('chat_history', (messages) => {
+        if (!messages || !messages.length) return;
+        addSystem(`--- Historial (${messages.length}) ---`);
+        messages.forEach(m => addMessage(m));
+      });
+
+      socket.on('chat_message_broadcast', (msg) => {
+        addMessage(msg);
+      });
+
+      socket.on('player_joined', (data) => {
+        addSystem(`${data.name} se ha unido a la sala`);
+      });
+
+      socket.on('player_left', (data) => {
+        addSystem(`${data.name} ha salido de la sala`);
+      });
+
+      socket.on('chat_error', (data) => {
+        showError(data.message || "Error en chat");
+        setStatus(`Error: ${data.message}`, 'error');
         inputEl.disabled = true;
         sendBtn.disabled = true;
-        addSystem("Sala llena. Intenta mas tarde.");
-        setTimeout(()=> socket.disconnect(), 400);
-        return;
-      }
-      if (data.reason === 'name_taken') {
-        setTimeout(()=> {
-          const newName = promptForName();
-          attemptJoin(newName);
-        }, 300);
-      }
-    });
+        isConnected = false;
+      });
 
-    socket.on('chat_history', (messages) => {
-      if (!messages || !messages.length) return;
-      addSystem(`--- Historial (${messages.length}) ---`);
-      messages.forEach(m => addMessage(m));
-    });
+      socket.on('disconnect', () => {
+        setStatus('Desconectado', 'error');
+        inputEl.disabled = true;
+        sendBtn.disabled = true;
+        addSystem('Conexion perdida con el servidor');
+      });
 
-    socket.on('chat_message_broadcast', (msg) => {
-      addMessage(msg);
-    });
+      socket.on('connect_error', (err) => {
+        setStatus('Error de conexion', 'error');
+        showError('No se pudo conectar al servidor');
+      });
 
-    socket.on('player_joined', (data) => {
-      addSystem(`${data.name} se ha unido a la sala`);
-    });
-
-    socket.on('player_left', (data) => {
-      addSystem(`${data.name} ha salido de la sala`);
-    });
-
-    socket.on('chat_error', (data) => {
-      showError(data.message || "Error en chat");
-      setStatus(`Error: ${data.message}`, 'error');
-      inputEl.disabled = true;
-      sendBtn.disabled = true;
-      isConnected = false;
-    });
-
-    socket.on('disconnect', () => {
-      setStatus('Desconectado', 'error');
-      inputEl.disabled = true;
-      sendBtn.disabled = true;
-      addSystem('Conexion perdida con el servidor');
-    });
-
-    socket.on('connect_error', (err) => {
-      setStatus('Error de conexion', 'error');
-      showError('No se pudo conectar al servidor');
-    });
-
-    sendBtn.addEventListener('click', () => {
-      sendChat();
-    });
-    inputEl.addEventListener('keypress', (ev) => {
-      if (ev.key === 'Enter') {
-        ev.preventDefault();
+      sendBtn.addEventListener('click', () => {
         sendChat();
+      });
+      inputEl.addEventListener('keypress', (ev) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          sendChat();
+        }
+      });
+
+      function sendChat() {
+        if (!isConnected || !playerId) return;
+        const text = inputEl.value.trim();
+        if (!text) return;
+        socket.emit('chat_message', { sessionId, playerId, text });
+        inputEl.value = '';
       }
-    });
 
-    function sendChat(){
-      if (!isConnected || !playerId) return;
-      const text = inputEl.value.trim();
-      if (!text) return;
-      socket.emit('chat_message', { sessionId, playerId, text });
-      inputEl.value = '';
-    }
+      function addEventToLog(message) {
+        const item = document.createElement('div');
+        item.className = 'log-item';
+        const t = new Date().toLocaleTimeString();
+        item.innerHTML = `<span style="color:#666;">[${t}]</span> ${message}`;
+        eventList.insertBefore(item, eventList.firstChild);
+        while (eventList.children.length > 15) eventList.removeChild(eventList.lastChild);
+      }
 
-    function addEventToLog(message){
-      const item = document.createElement('div');
-      item.className = 'log-item';
-      const t = new Date().toLocaleTimeString();
-      item.innerHTML = `<span style="color:#666;">[${t}]</span> ${message}`;
-      eventList.insertBefore(item, eventList.firstChild);
-      while (eventList.children.length > 15) eventList.removeChild(eventList.lastChild);
-    }
-
-    function showWarning(msg) {
-      const warningDiv = document.createElement('div');
-      warningDiv.textContent = msg;
-      warningDiv.style.cssText = `
+      function showWarning(msg) {
+        const warningDiv = document.createElement('div');
+        warningDiv.textContent = msg;
+        warningDiv.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
@@ -616,518 +661,546 @@
         font-weight: bold;
         box-shadow: 0 0 20px rgba(255,0,0,0.5);
       `;
-      document.body.appendChild(warningDiv);
+        document.body.appendChild(warningDiv);
 
-      clearTimeout(warningTimeout);
-      warningTimeout = setTimeout(() => warningDiv.remove(), 2500);
-    }
+        clearTimeout(warningTimeout);
+        warningTimeout = setTimeout(() => warningDiv.remove(), 2500);
+      }
 
-    // ============================================
-    // PHASER
-    // ============================================
-    let myPlayerId = null;
-    let otherPlayers = {};
-    let currentGameTime = 0;
+      // ============================================
+      // PHASER
+      // ============================================
+      let myPlayerId = null;
+      let otherPlayers = {};
+      let currentGameTime = 0;
 
-    const gameContainer = document.getElementById('game-container');
-    const config = {
-      type: Phaser.AUTO,
-      width: gameContainer.clientWidth,
-      height: gameContainer.clientHeight,
-      parent: 'game-container',
-      backgroundColor: '#000000',
-      scene: { preload, create, update },
-      physics: { default: 'arcade', arcade: { debug: false } }
-    };
-    const game = new Phaser.Game(config);
+      const gameContainer = document.getElementById('game-container');
+      const config = {
+        type: Phaser.AUTO,
+        width: gameContainer.clientWidth,
+        height: gameContainer.clientHeight,
+        parent: 'game-container',
+        backgroundColor: '#000000',
+        scene: { preload, create, update },
+        physics: { default: 'arcade', arcade: { debug: false } }
+      };
+      const game = new Phaser.Game(config);
 
-    let isometricView = false;
+      let isometricView = false;
 
-    function cartesianToIso(x, y) {
-      return { x: (x - y) * 0.5, y: (x + y) * 0.25 };
-    }
+      function cartesianToIso(x, y) {
+        return { x: (x - y) * 0.5, y: (x + y) * 0.25 };
+      }
 
-    function isoToCartesian(isoX, isoY) {
-      return { x: isoY + isoX * 2, y: isoY - isoX * 2 };
-    }
+      function isoToCartesian(isoX, isoY) {
+        return { x: isoY + isoX * 2, y: isoY - isoX * 2 };
+      }
 
-    function worldToScreen(worldX, worldY) {
-      if (!isometricView) return { x: worldX, y: worldY };
-      const { x, y } = cartesianToIso(worldX, worldY);
-      const offsetX = gameContainer.clientWidth / 2;
-      const offsetY = 150;
-      return { x: x + offsetX, y: y + offsetY };
-    }
+      function worldToScreen(worldX, worldY) {
+        if (!isometricView) return { x: worldX, y: worldY };
+        const { x, y } = cartesianToIso(worldX, worldY);
+        const offsetX = gameContainer.clientWidth / 2;
+        const offsetY = 150;
+        return { x: x + offsetX, y: y + offsetY };
+      }
 
-    function toggleViewTransition(scene, toIsometric) {
-      const areas = scene.areas || [];
+      function toggleViewTransition(scene, toIsometric) {
+        const areas = scene.areas || [];
 
-      areas.forEach(area => {
-        const wx = area.getData('worldX');
-        const wy = area.getData('worldY');
-        const newPos = toIsometric ? cartesianToIso(wx, wy) : { x: wx, y: wy };
-        const offsetX = toIsometric ? gameContainer.clientWidth / 2 : 0;
-        const offsetY = toIsometric ? 150 : 0;
-        
-        scene.tweens.add({
-          targets: area,
-          x: newPos.x + offsetX,
-          y: newPos.y + offsetY,
-          duration: 500,
-          ease: 'Sine.easeInOut',
-        });
+        areas.forEach(area => {
+          const wx = area.getData('worldX');
+          const wy = area.getData('worldY');
+          const newPos = toIsometric ? cartesianToIso(wx, wy) : { x: wx, y: wy };
+          const offsetX = toIsometric ? gameContainer.clientWidth / 2 : 0;
+          const offsetY = toIsometric ? 150 : 0;
 
-        const label = area.getData('label');
-        if (label) {
           scene.tweens.add({
-            targets: label,
+            targets: area,
             x: newPos.x + offsetX,
             y: newPos.y + offsetY,
             duration: 500,
             ease: 'Sine.easeInOut',
           });
-        }
-      });
 
-      if (scene.player) {
-        const wx = scene.player.data.worldX;
-        const wy = scene.player.data.worldY;
-        const p = worldToScreen(wx, wy);
-        
-        scene.tweens.add({
-          targets: scene.player.sprite,
-          x: p.x,
-          y: p.y,
-          duration: 500,
-          ease: 'Sine.easeInOut',
+          const label = area.getData('label');
+          if (label) {
+            scene.tweens.add({
+              targets: label,
+              x: newPos.x + offsetX,
+              y: newPos.y + offsetY,
+              duration: 500,
+              ease: 'Sine.easeInOut',
+            });
+          }
         });
-        scene.tweens.add({
-          targets: scene.player.nameText,
-          x: p.x,
-          y: p.y - 28,
-          duration: 500,
-          ease: 'Sine.easeInOut',
+
+        if (scene.player) {
+          const wx = scene.player.data.worldX;
+          const wy = scene.player.data.worldY;
+          const p = worldToScreen(wx, wy);
+
+          scene.tweens.add({
+            targets: scene.player.sprite,
+            x: p.x,
+            y: p.y,
+            duration: 500,
+            ease: 'Sine.easeInOut',
+          });
+          scene.tweens.add({
+            targets: scene.player.nameText,
+            x: p.x,
+            y: p.y - 28,
+            duration: 500,
+            ease: 'Sine.easeInOut',
+          });
+        }
+
+        Object.values(otherPlayers).forEach(op => {
+          const wx = op.data.worldX;
+          const wy = op.data.worldY;
+          const p = worldToScreen(wx, wy);
+
+          scene.tweens.add({
+            targets: op.sprite,
+            x: p.x,
+            y: p.y,
+            duration: 500,
+            ease: 'Sine.easeInOut',
+          });
+          scene.tweens.add({
+            targets: op.nameText,
+            x: p.x,
+            y: p.y - 28,
+            duration: 500,
+            ease: 'Sine.easeInOut',
+          });
         });
       }
 
-      Object.values(otherPlayers).forEach(op => {
-        const wx = op.data.worldX;
-        const wy = op.data.worldY;
-        const p = worldToScreen(wx, wy);
-        
-        scene.tweens.add({
-          targets: op.sprite,
-          x: p.x,
-          y: p.y,
-          duration: 500,
-          ease: 'Sine.easeInOut',
+      const toggleBtn = document.getElementById('toggle-view-btn');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+          const scene = game.scene.scenes[0];
+          isometricView = !isometricView;
+          addEventToLog(isometricView ? 'Vista: Isométrica' : 'Vista: 2D');
+          toggleViewTransition(scene, isometricView);
         });
-        scene.tweens.add({
-          targets: op.nameText,
-          x: p.x,
-          y: p.y - 28,
-          duration: 500,
-          ease: 'Sine.easeInOut',
-        });
-      });
-    }
-
-    document.getElementById('toggle-view-btn').addEventListener('click', () => {
-      const scene = game.scene.scenes[0];
-      isometricView = !isometricView;
-      addEventToLog(isometricView ? 'Vista: Isométrica' : 'Vista: 2D');
-      toggleViewTransition(scene, isometricView);
-    });
-
-    window.addEventListener('keydown', (e) => {
-      const chatInput = document.getElementById('chat-input');
-      if (document.activeElement === chatInput) {
-        e.stopImmediatePropagation();
-        if (e.code === 'Space') {
-          e.preventDefault();
-          chatInput.value += ' ';
-        }
       }
-    });
 
-    function preload(){}
 
-    function create(){
-      const scene = this;
-
-      const graphics = this.add.graphics();
-      graphics.lineStyle(1, 0x16213e, 0.25);
-      for (let x=0; x<1200; x+=50) graphics.lineBetween(x,0,x,800);
-      for (let y=0; y<800; y+=50) graphics.lineBetween(0,y,1200,y);
-
-      this.add.text(scene.scale.width / 2, 16, 'NASA SPATIUM - Multiplayer', {
-        fontSize:'22px',
-        color:'#66ccff',
-        fontFamily:'Segoe UI'
-      }).setOrigin(0.5,0);
-
-      scene.player = null;
-      scene.cursors = this.input.keyboard.createCursorKeys();
-      scene.keys = this.input.keyboard.addKeys({
-        SHIFT: Phaser.Input.Keyboard.KeyCodes.SHIFT
+      window.addEventListener('keydown', (e) => {
+        const chatInput = document.getElementById('chat-input');
+        if (document.activeElement === chatInput) {
+          e.stopImmediatePropagation();
+          if (e.code === 'Space') {
+            e.preventDefault();
+            chatInput.value += ' ';
+          }
+        }
       });
 
-      const chatInput = document.getElementById('chat-input');
+      function preload() { }
 
-      chatInput.addEventListener('focus', () => {
-        scene.input.keyboard.enabled = false;
-      });
+      function create() {
+        const scene = this;
+        loadMapGrid(this);
 
-      chatInput.addEventListener('blur', () => {
-        scene.input.keyboard.enabled = true;
-      });
 
-      socket.on('connect', () => {
-        myPlayerId = socket.id;
-        console.log('Game socket connected', myPlayerId);
-        addEventToLog('Conectado al servidor (juego)');
-      });
+        const graphics = this.add.graphics();
+        graphics.lineStyle(1, 0x16213e, 0.25);
+        for (let x = 0; x < 1200; x += 50) graphics.lineBetween(x, 0, x, 800);
+        for (let y = 0; y < 800; y += 50) graphics.lineBetween(0, y, 1200, y);
 
-      socket.on('state:update', (state) => {
-        currentGameTime = state.gameTime || 0;
-        updateGameTimeUI(currentGameTime);
+        this.add.text(scene.scale.width / 2, 16, 'NASA SPATIUM - Multiplayer', {
+          fontSize: '22px',
+          color: '#66ccff',
+          fontFamily: 'Segoe UI'
+        }).setOrigin(0.5, 0);
 
-        const scene = game.scene.scenes[0];
-        const players = state.players || {};
+        scene.player = null;
+        scene.cursors = this.input.keyboard.createCursorKeys();
+        scene.keys = this.input.keyboard.addKeys({
+          SHIFT: Phaser.Input.Keyboard.KeyCodes.SHIFT
+        });
 
-        if (!scene) return;
+        const chatInput = document.getElementById('chat-input');
 
-        Object.values(players).forEach(pd => {
-          const screen = worldToScreen(pd.x || 200, pd.y || 200);
+        chatInput.addEventListener('focus', () => {
+          scene.input.keyboard.enabled = false;
+        });
 
-          if (pd.id === myPlayerId) {
-            if (!scene.player) {
-              scene.player = createPlayer(scene, pd, true);
+        chatInput.addEventListener('blur', () => {
+          scene.input.keyboard.enabled = true;
+        });
+
+        socket.on('connect', () => {
+          myPlayerId = socket.id;
+          console.log('Game socket connected', myPlayerId);
+          addEventToLog('Conectado al servidor (juego)');
+        });
+
+        socket.on('state:update', (state) => {
+          currentGameTime = state.gameTime || 0;
+          updateGameTimeUI(currentGameTime);
+
+          const scene = game.scene.scenes[0];
+          const players = state.players || {};
+
+          if (!scene) return;
+
+          Object.values(players).forEach(pd => {
+            const screen = worldToScreen(pd.x || 200, pd.y || 200);
+
+            if (pd.id === myPlayerId) {
+              if (!scene.player) {
+                scene.player = createPlayer(scene, pd, true);
+              } else {
+                scene.player.data.worldX = pd.x;
+                scene.player.data.worldY = pd.y;
+                scene.tweens.add({
+                  targets: scene.player.sprite,
+                  x: screen.x,
+                  y: screen.y,
+                  duration: 50,
+                  ease: 'Linear'
+                });
+                scene.player.nameText.x = screen.x;
+                scene.player.nameText.y = screen.y - 28;
+              }
+              updatePlayerStatsUI(pd);
             } else {
-              scene.player.data.worldX = pd.x;
-              scene.player.data.worldY = pd.y;
-              scene.tweens.add({
-                targets: scene.player.sprite,
-                x: screen.x,
-                y: screen.y,
-                duration: 50,
-                ease: 'Linear'
-              });
-              scene.player.nameText.x = screen.x;
-              scene.player.nameText.y = screen.y - 28;
+              if (!otherPlayers[pd.id]) {
+                otherPlayers[pd.id] = createPlayer(scene, pd, false);
+              } else {
+                const op = otherPlayers[pd.id];
+                op.data.worldX = pd.x;
+                op.data.worldY = pd.y;
+                const s = worldToScreen(pd.x || 200, pd.y || 200);
+                scene.tweens.add({
+                  targets: [op.sprite],
+                  x: s.x,
+                  y: s.y,
+                  duration: 50,
+                  ease: 'Linear'
+                });
+                op.nameText.x = s.x;
+                op.nameText.y = s.y - 28;
+              }
             }
-            updatePlayerStatsUI(pd);
+          });
+
+          Object.keys(otherPlayers).forEach(id => {
+            if (!players[id]) {
+              try {
+                otherPlayers[id].sprite.destroy();
+                otherPlayers[id].nameText.destroy();
+              } catch (e) { }
+              delete otherPlayers[id];
+            }
+          });
+        });
+
+        socket.on('game:event', (ev) => {
+          addEventToLog(ev.type || 'evento');
+          if (ev.type === 'storm_incoming') scene.cameras.main.shake(500, 0.006);
+        });
+
+        createTestAreas(scene);
+      }
+
+      async function loadMapGrid(scene) {
+        const response = await fetch("http://localhost:4000/assets/maps/map_grid.json");
+        const data = await response.json();
+        const { width, height, cells } = data;
+
+        const cellSize = 8; // cambia si tu mapa es más grande
+        const graphics = scene.add.graphics();
+        graphics.lineStyle(1, 0x333366, 0.5);
+
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const filled = cells[y][x];
+            const color = filled ? 0x555555 : 0x222244;
+            graphics.fillStyle(color, filled ? 0.8 : 0.3);
+            graphics.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+          }
+        }
+
+        console.log("✅ Mapa cargado desde grid JSON");
+      }
+
+
+      function createTestAreas(scene) {
+        const testAreas = [
+          { type: 'Kitchen', x: 150, y: 150, width: 80, height: 80, color: 0xFFB347 },
+          { type: 'Sleep', x: 300, y: 150, width: 80, height: 80, color: 0x9B59FF },
+          { type: 'Energy', x: 450, y: 150, width: 80, height: 80, color: 0xF1C40F },
+          { type: 'Control', x: 150, y: 300, width: 80, height: 80, color: 0xE74C3C },
+          { type: 'Maintenance', x: 300, y: 300, width: 80, height: 80, color: 0x00CFCF },
+        ];
+
+        scene.areas = [];
+
+        testAreas.forEach(area => {
+          const { x, y, width, height, color, type } = area;
+
+          const rect = scene.add.rectangle(x, y, width, height, color, 0.6);
+          rect.setStrokeStyle(2, color);
+          rect.setInteractive({ useHandCursor: true });
+          rect.setData('worldX', x);
+          rect.setData('worldY', y);
+          rect.setData('width', width);
+          rect.setData('height', height);
+          rect.setData('areaType', type);
+
+          const label = scene.add.text(x, y, type, {
+            fontSize: '12px',
+            color: '#fff',
+            backgroundColor: '#000',
+            padding: { x: 4, y: 2 }
+          }).setOrigin(0.5);
+
+          rect.setData('label', label);
+
+          rect.on('pointerover', () => rect.setAlpha(0.8));
+          rect.on('pointerout', () => rect.setAlpha(0.6));
+
+          scene.areas.push(rect);
+          placedAreas.add(type);
+        });
+      }
+
+      function update() {
+        const scene = this;
+        if (!scene.player) return;
+        if (!playerAlive) return;
+
+        const speed = scene.keys.SHIFT.isDown ? 8 : 5;
+        let dx = 0;
+        let dy = 0;
+        let moved = false;
+
+        if (scene.cursors.up.isDown) { dy = -1; moved = true; }
+        if (scene.cursors.down.isDown) { dy = 1; moved = true; }
+        if (scene.cursors.left.isDown) { dx = -1; moved = true; }
+        if (scene.cursors.right.isDown) { dx = 1; moved = true; }
+
+        if (moved) {
+          if (dx !== 0 && dy !== 0) {
+            const m = Math.sqrt(dx * dx + dy * dy);
+            dx = (dx / m) * speed;
+            dy = (dy / m) * speed;
           } else {
-            if (!otherPlayers[pd.id]) {
-              otherPlayers[pd.id] = createPlayer(scene, pd, false);
-            } else {
-              const op = otherPlayers[pd.id];
-              op.data.worldX = pd.x;
-              op.data.worldY = pd.y;
-              const s = worldToScreen(pd.x || 200, pd.y || 200);
-              scene.tweens.add({
-                targets: [op.sprite],
-                x: s.x,
-                y: s.y,
-                duration: 50,
-                ease: 'Linear'
-              });
-              op.nameText.x = s.x;
-              op.nameText.y = s.y - 28;
+            dx *= speed;
+            dy *= speed;
+          }
+
+          const direction = getDirection(dx, dy);
+          socket.emit('player:move', { dx, dy, direction });
+        }
+
+        if (simulationStarted && currentMission && currentMission.status === 'active') {
+          const px = scene.player.data.worldX;
+          const py = scene.player.data.worldY;
+
+          let inCorrectArea = false;
+          (scene.areas || []).forEach(area => {
+            if (area.getData('areaType') === currentMission.config.area) {
+              const ax = area.getData('worldX');
+              const ay = area.getData('worldY');
+              const w = area.getData('width');
+              const h = area.getData('height');
+
+              const dist = Math.sqrt((px - ax) ** 2 + (py - ay) ** 2);
+              if (dist < Math.max(w, h) / 2 + 20) {
+                inCorrectArea = true;
+              }
             }
+          });
+
+          if (inCorrectArea) {
+            currentMission.progress = Math.min(100, currentMission.progress + 0.5);
+          } else {
+            currentMission.progress = Math.max(0, currentMission.progress - 0.2);
           }
-        });
 
-        Object.keys(otherPlayers).forEach(id => {
-          if (!players[id]) {
-            try {
-              otherPlayers[id].sprite.destroy();
-              otherPlayers[id].nameText.destroy();
-            } catch (e) {}
-            delete otherPlayers[id];
+          updateMissionProgress(currentMission.id, currentMission.progress);
+
+          if (currentMission.progress >= 100) {
+            completeMission(currentMission.id);
           }
-        });
-      });
+        }
+      }
 
-      socket.on('game:event', (ev) => {
-        addEventToLog(ev.type || 'evento');
-        if (ev.type === 'storm_incoming') scene.cameras.main.shake(500, 0.006);
-      });
+      function createPlayer(scene, pd, local) {
+        const key = 'player_' + pd.id;
+        if (!scene.textures.exists(key)) {
+          const g = scene.add.graphics();
+          const color = local ? 0x3498db : 0xe74c3c;
+          g.fillStyle(color, 1);
+          g.fillCircle(20, 20, 15);
+          g.lineStyle(2, 0xffffff, 1);
+          g.strokeCircle(20, 20, 15);
+          g.generateTexture(key, 40, 40);
+          g.destroy();
+        }
 
-      createTestAreas(scene);
-    }
+        const screen = worldToScreen(pd.x || 200, pd.y || 200);
+        const sprite = scene.add.sprite(screen.x, screen.y, key);
 
-    function createTestAreas(scene) {
-      const testAreas = [
-        { type: 'Kitchen', x: 150, y: 150, width: 80, height: 80, color: 0xFFB347 },
-        { type: 'Sleep', x: 300, y: 150, width: 80, height: 80, color: 0x9B59FF },
-        { type: 'Energy', x: 450, y: 150, width: 80, height: 80, color: 0xF1C40F },
-        { type: 'Control', x: 150, y: 300, width: 80, height: 80, color: 0xE74C3C },
-        { type: 'Maintenance', x: 300, y: 300, width: 80, height: 80, color: 0x00CFCF },
-      ];
-
-      scene.areas = [];
-
-      testAreas.forEach(area => {
-        const { x, y, width, height, color, type } = area;
-
-        const rect = scene.add.rectangle(x, y, width, height, color, 0.6);
-        rect.setStrokeStyle(2, color);
-        rect.setInteractive({ useHandCursor: true });
-        rect.setData('worldX', x);
-        rect.setData('worldY', y);
-        rect.setData('width', width);
-        rect.setData('height', height);
-        rect.setData('areaType', type);
-
-        const label = scene.add.text(x, y, type, {
+        const short = (pd.id || 'n').slice(0, 6);
+        const nameText = scene.add.text(sprite.x, sprite.y - 28, short, {
           fontSize: '12px',
-          color: '#fff',
+          color: local ? '#bfefff' : '#ffd6a6',
           backgroundColor: '#000',
           padding: { x: 4, y: 2 }
         }).setOrigin(0.5);
 
-        rect.setData('label', label);
+        const data = { worldX: pd.x || 200, worldY: pd.y || 200, id: pd.id };
 
-        rect.on('pointerover', () => rect.setAlpha(0.8));
-        rect.on('pointerout', () => rect.setAlpha(0.6));
-
-        scene.areas.push(rect);
-        placedAreas.add(type);
-      });
-    }
-
-    function update() {
-      const scene = this;
-      if (!scene.player) return;
-      if (!playerAlive) return;
-
-      const speed = scene.keys.SHIFT.isDown ? 8 : 5;
-      let dx = 0;
-      let dy = 0;
-      let moved = false;
-
-      if (scene.cursors.up.isDown) { dy = -1; moved = true; }
-      if (scene.cursors.down.isDown) { dy = 1; moved = true; }
-      if (scene.cursors.left.isDown) { dx = -1; moved = true; }
-      if (scene.cursors.right.isDown) { dx = 1; moved = true; }
-
-      if (moved) {
-        if (dx !== 0 && dy !== 0) {
-          const m = Math.sqrt(dx*dx + dy*dy);
-          dx = (dx/m) * speed;
-          dy = (dy/m) * speed;
-        } else {
-          dx *= speed;
-          dy *= speed;
-        }
-
-        const direction = getDirection(dx, dy);
-        socket.emit('player:move', { dx, dy, direction });
+        return { sprite, nameText, data };
       }
 
-      if (simulationStarted && currentMission && currentMission.status === 'active') {
-        const px = scene.player.data.worldX;
-        const py = scene.player.data.worldY;
+      function getDirection(dx, dy) {
+        if (dy < 0 && dx === 0) return 'up';
+        if (dy > 0 && dx === 0) return 'down';
+        if (dx < 0 && dy === 0) return 'left';
+        if (dx > 0 && dy === 0) return 'right';
+        if (dx < 0 && dy < 0) return 'up-left';
+        if (dx > 0 && dy < 0) return 'up-right';
+        if (dx < 0 && dy > 0) return 'down-left';
+        if (dx > 0 && dy > 0) return 'down-right';
+        return 'idle';
+      }
 
-        let inCorrectArea = false;
-        (scene.areas || []).forEach(area => {
-          if (area.getData('areaType') === currentMission.config.area) {
-            const ax = area.getData('worldX');
-            const ay = area.getData('worldY');
-            const w = area.getData('width');
-            const h = area.getData('height');
+      function updateGameTimeUI(seconds) {
+        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const secs = (seconds % 60).toString().padStart(2, '0');
+        gameTimeEl.textContent = `${mins}:${secs}`;
+      }
 
-            const dist = Math.sqrt((px - ax) ** 2 + (py - ay) ** 2);
-            if (dist < Math.max(w, h) / 2 + 20) {
-              inCorrectArea = true;
-            }
+      function updatePlayerStatsUI(pd) {
+        if (!pd) return;
+
+        const healthEl = document.getElementById('stat-health');
+        const oxygenEl = document.getElementById('stat-oxygen');
+        const hungerEl = document.getElementById('stat-hunger');
+        const energyEl = document.getElementById('stat-energy');
+
+        if (healthEl) healthEl.textContent = `${pd.health}%`;
+        if (oxygenEl) oxygenEl.textContent = `${pd.oxygen}%`;
+        if (hungerEl) hungerEl.textContent = `${pd.hunger || 100}%`;
+        if (energyEl) energyEl.textContent = `${pd.energy || 100}%`;
+
+        if (playerAlive && pd.health <= 0) {
+          playerAlive = false;
+          addEventToLog('💀 Has muerto. Puedes observar pero no moverte ni completar misiones.');
+
+          const scene = game.scene.scenes[0];
+          if (scene.player && scene.player.nameText) {
+            scene.player.nameText.setText(`[DEAD] ${scene.player.nameText.text}`);
+            scene.player.nameText.setColor('#888');
           }
+        }
+      }
+
+      // ============================================
+      // SISTEMA DE MISIONES
+      // ============================================
+      const activeMissionsMap = new Map();
+      let allMissions = [];
+      let completedCount = 0;
+
+      socket.on('missions:assigned', (data) => {
+        console.log('Missions assigned:', data);
+        allMissions = data.missions || [];
+        allMissions.forEach(mission => {
+          mission.progress = 0;
+          mission.status = 'pending';
+          activeMissionsMap.set(mission.id, mission);
         });
-
-        if (inCorrectArea) {
-          currentMission.progress = Math.min(100, currentMission.progress + 0.5);
-        } else {
-          currentMission.progress = Math.max(0, currentMission.progress - 0.2);
-        }
-
-        updateMissionProgress(currentMission.id, currentMission.progress);
-
-        if (currentMission.progress >= 100) {
-          completeMission(currentMission.id);
-        }
-      }
-    }
-
-    function createPlayer(scene, pd, local){
-      const key = 'player_' + pd.id;
-      if (!scene.textures.exists(key)) {
-        const g = scene.add.graphics();
-        const color = local ? 0x3498db : 0xe74c3c;
-        g.fillStyle(color, 1);
-        g.fillCircle(20, 20, 15);
-        g.lineStyle(2, 0xffffff, 1);
-        g.strokeCircle(20, 20, 15);
-        g.generateTexture(key, 40, 40);
-        g.destroy();
-      }
-
-      const screen = worldToScreen(pd.x || 200, pd.y || 200);
-      const sprite = scene.add.sprite(screen.x, screen.y, key);
-
-      const short = (pd.id || 'n').slice(0, 6);
-      const nameText = scene.add.text(sprite.x, sprite.y - 28, short, {
-        fontSize: '12px',
-        color: local ? '#bfefff' : '#ffd6a6',
-        backgroundColor: '#000',
-        padding: {x: 4, y: 2}
-      }).setOrigin(0.5);
-
-      const data = { worldX: pd.x || 200, worldY: pd.y || 200, id: pd.id };
-
-      return { sprite, nameText, data };
-    }
-
-    function getDirection(dx, dy){
-      if (dy < 0 && dx === 0) return 'up';
-      if (dy > 0 && dx === 0) return 'down';
-      if (dx < 0 && dy === 0) return 'left';
-      if (dx > 0 && dy === 0) return 'right';
-      if (dx < 0 && dy < 0) return 'up-left';
-      if (dx > 0 && dy < 0) return 'up-right';
-      if (dx < 0 && dy > 0) return 'down-left';
-      if (dx > 0 && dy > 0) return 'down-right';
-      return 'idle';
-    }
-
-    function updateGameTimeUI(seconds){
-      const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-      const secs = (seconds % 60).toString().padStart(2, '0');
-      gameTimeEl.textContent = `${mins}:${secs}`;
-    }
-
-    function updatePlayerStatsUI(pd) {
-      if (!pd) return;
-
-      const healthEl = document.getElementById('stat-health');
-      const oxygenEl = document.getElementById('stat-oxygen');
-      const hungerEl = document.getElementById('stat-hunger');
-      const energyEl = document.getElementById('stat-energy');
-
-      if (healthEl) healthEl.textContent = `${pd.health}%`;
-      if (oxygenEl) oxygenEl.textContent = `${pd.oxygen}%`;
-      if (hungerEl) hungerEl.textContent = `${pd.hunger || 100}%`;
-      if (energyEl) energyEl.textContent = `${pd.energy || 100}%`;
-
-      if (playerAlive && pd.health <= 0) {
-        playerAlive = false;
-        addEventToLog('💀 Has muerto. Puedes observar pero no moverte ni completar misiones.');
-
-        const scene = game.scene.scenes[0];
-        if (scene.player && scene.player.nameText) {
-          scene.player.nameText.setText(`[DEAD] ${scene.player.nameText.text}`);
-          scene.player.nameText.setColor('#888');
-        }
-      }
-    }
-
-    // ============================================
-    // SISTEMA DE MISIONES
-    // ============================================
-    const activeMissionsMap = new Map();
-    let allMissions = [];
-    let completedCount = 0;
-
-    socket.on('missions:assigned', (data) => {
-      console.log('Missions assigned:', data);
-      allMissions = data.missions || [];
-      allMissions.forEach(mission => {
-        mission.progress = 0;
-        mission.status = 'pending';
-        activeMissionsMap.set(mission.id, mission);
+        updateMissionsUI();
+        addEventToLog(`${allMissions.length} misiones asignadas`);
       });
-      updateMissionsUI();
-      addEventToLog(`${allMissions.length} misiones asignadas`);
-    });
 
-    socket.on('mission:completed', (data) => {
-      console.log('Mission completed from server:', data);
-      const mission = activeMissionsMap.get(data.mission.id);
-      if (mission) {
+      socket.on('mission:completed', (data) => {
+        console.log('Mission completed from server:', data);
+        const mission = activeMissionsMap.get(data.mission.id);
+        if (mission) {
+          mission.status = 'completed';
+          mission.progress = 100;
+          completedCount++;
+          updateMissionsUI();
+
+          const scene = game.scene.scenes[0];
+          if (scene && scene.cameras) {
+            scene.cameras.main.flash(400, 100, 255, 100);
+          }
+        }
+      });
+
+      function completeMission(missionId) {
+        const mission = activeMissionsMap.get(missionId);
+        if (!mission || mission.status === 'completed') return;
+
         mission.status = 'completed';
         mission.progress = 100;
         completedCount++;
+        currentMission = null;
+
+        addEventToLog(`✅ ${mission.config.name} completada`);
         updateMissionsUI();
+
+        socket.emit('mission:activate', {
+          missionId: mission.id,
+          playerId: playerId || socket.id
+        });
 
         const scene = game.scene.scenes[0];
         if (scene && scene.cameras) {
           scene.cameras.main.flash(400, 100, 255, 100);
         }
       }
-    });
 
-    function completeMission(missionId) {
-      const mission = activeMissionsMap.get(missionId);
-      if (!mission || mission.status === 'completed') return;
+      function updateMissionsUI() {
+        const missionsList = document.getElementById('missions-list');
+        const missionCounter = document.getElementById('mission-counter');
 
-      mission.status = 'completed';
-      mission.progress = 100;
-      completedCount++;
-      currentMission = null;
+        missionCounter.textContent = `(${completedCount}/${allMissions.length})`;
 
-      addEventToLog(`✅ ${mission.config.name} completada`);
-      updateMissionsUI();
-
-      socket.emit('mission:activate', {
-        missionId: mission.id,
-        playerId: playerId || socket.id
-      });
-
-      const scene = game.scene.scenes[0];
-      if (scene && scene.cameras) {
-        scene.cameras.main.flash(400, 100, 255, 100);
-      }
-    }
-
-    function updateMissionsUI() {
-      const missionsList = document.getElementById('missions-list');
-      const missionCounter = document.getElementById('mission-counter');
-
-      missionCounter.textContent = `(${completedCount}/${allMissions.length})`;
-
-      if (allMissions.length === 0) {
-        missionsList.innerHTML = `
+        if (allMissions.length === 0) {
+          missionsList.innerHTML = `
           <div style="text-align:center; color:#9aa7b2; font-size:12px; padding:20px;">
             Sin misiones asignadas
           </div>
         `;
-        return;
-      }
-
-      missionsList.innerHTML = '';
-
-      allMissions.forEach((mission) => {
-        let statusClass = '';
-        let statusText = 'Pendiente';
-        let isOwned = missionOwnership[mission.id] === playerId;
-        let isClaimed = missionOwnership[mission.id] && !isOwned;
-
-        if (mission.status === 'active' || isOwned) {
-          statusClass = 'active';
-          statusText = isOwned ? 'Tu misión' : 'En progreso';
-        } else if (mission.status === 'completed') {
-          statusClass = 'completed';
-          statusText = 'Completada';
-        } else if (isClaimed) {
-          statusText = 'Reclamada';
+          return;
         }
 
-        const card = document.createElement('div');
-        card.className = `mission-card ${statusClass}`;
-        card.style.cursor = (mission.status === 'completed' || isClaimed) ? 'not-allowed' : 'pointer';
-        card.style.opacity = (mission.status === 'completed' || isClaimed) ? '0.6' : '1';
-        
-        card.innerHTML = `
+        missionsList.innerHTML = '';
+
+        allMissions.forEach((mission) => {
+          let statusClass = '';
+          let statusText = 'Pendiente';
+          let isOwned = missionOwnership[mission.id] === playerId;
+          let isClaimed = missionOwnership[mission.id] && !isOwned;
+
+          if (mission.status === 'active' || isOwned) {
+            statusClass = 'active';
+            statusText = isOwned ? 'Tu misión' : 'En progreso';
+          } else if (mission.status === 'completed') {
+            statusClass = 'completed';
+            statusText = 'Completada';
+          } else if (isClaimed) {
+            statusText = 'Reclamada';
+          }
+
+          const card = document.createElement('div');
+          card.className = `mission-card ${statusClass}`;
+          card.style.cursor = (mission.status === 'completed' || isClaimed) ? 'not-allowed' : 'pointer';
+          card.style.opacity = (mission.status === 'completed' || isClaimed) ? '0.6' : '1';
+
+          card.innerHTML = `
           <div class="mission-header">
             <div class="mission-name">${mission.config.name}</div>
             <div class="mission-status">${statusText}</div>
@@ -1140,107 +1213,107 @@
           <div class="mission-progress-text">${Math.floor(mission.progress)}%</div>
         `;
 
-        card.addEventListener('click', () => {
-          if (!playerAlive) {
-            showWarning('Estás muerto y no puedes reclamar misiones');
-            return;
-          }
+          card.addEventListener('click', () => {
+            if (!playerAlive) {
+              showWarning('Estás muerto y no puedes reclamar misiones');
+              return;
+            }
 
-          if (mission.status === 'completed') {
-            showWarning('Esta misión ya está completada');
-            return;
-          }
+            if (mission.status === 'completed') {
+              showWarning('Esta misión ya está completada');
+              return;
+            }
 
-          if (currentMission && currentMission.status !== 'completed') {
-            showWarning('Ya tienes una misión asignada');
-            return;
-          }
+            if (currentMission && currentMission.status !== 'completed') {
+              showWarning('Ya tienes una misión asignada');
+              return;
+            }
 
-          if (missionOwnership[mission.id] && missionOwnership[mission.id] !== playerId) {
-            showWarning('Otro jugador ya reclamó esta misión');
-            return;
-          }
+            if (missionOwnership[mission.id] && missionOwnership[mission.id] !== playerId) {
+              showWarning('Otro jugador ya reclamó esta misión');
+              return;
+            }
 
-          missionOwnership[mission.id] = playerId;
-          currentMission = mission;
-          mission.status = 'active';
-          mission.progress = 0;
-          updateMissionsUI();
-          addEventToLog(`📋 Reclamaste: ${mission.config.name}`);
+            missionOwnership[mission.id] = playerId;
+            currentMission = mission;
+            mission.status = 'active';
+            mission.progress = 0;
+            updateMissionsUI();
+            addEventToLog(`📋 Reclamaste: ${mission.config.name}`);
+          });
+
+          missionsList.appendChild(card);
         });
-
-        missionsList.appendChild(card);
-      });
-    }
-
-    function updateMissionProgress(missionId, progress) {
-      const progressBar = document.getElementById(`mission-progress-${missionId}`);
-      if (progressBar) {
-        progressBar.style.width = `${progress}%`;
       }
 
-      const mission = activeMissionsMap.get(missionId);
-      if (mission) {
-        const card = Array.from(document.querySelectorAll('.mission-card')).find(c => 
-          c.querySelector(`#mission-progress-${missionId}`)
-        );
-        if (card) {
-          const progressText = card.querySelector('.mission-progress-text');
-          if (progressText) {
-            progressText.textContent = `${Math.floor(progress)}%`;
+      function updateMissionProgress(missionId, progress) {
+        const progressBar = document.getElementById(`mission-progress-${missionId}`);
+        if (progressBar) {
+          progressBar.style.width = `${progress}%`;
+        }
+
+        const mission = activeMissionsMap.get(missionId);
+        if (mission) {
+          const card = Array.from(document.querySelectorAll('.mission-card')).find(c =>
+            c.querySelector(`#mission-progress-${missionId}`)
+          );
+          if (card) {
+            const progressText = card.querySelector('.mission-progress-text');
+            if (progressText) {
+              progressText.textContent = `${Math.floor(progress)}%`;
+            }
           }
         }
       }
-    }
 
-    // ============================================
-    // SISTEMA DE EVENTOS
-    // ============================================
-    const activeEventsMap = new Map();
+      // ============================================
+      // SISTEMA DE EVENTOS
+      // ============================================
+      const activeEventsMap = new Map();
 
-    socket.on('event:triggered', (event) => {
-      console.log('Event triggered:', event);
-      activeEventsMap.set(event.id, event);
-      updateEventsUI();
-      addEventToLog(`${event.config.icon} ${event.config.name}`);
-
-      const scene = game.scene.scenes[0];
-      if (scene && scene.cameras) {
-        scene.cameras.main.flash(300, 255, 100, 100);
-      }
-    });
-
-    socket.on('event:resolved', (data) => {
-      console.log('Event resolved:', data);
-      activeEventsMap.delete(data.eventId);
-      updateEventsUI();
-      addEventToLog(`Evento resuelto`);
-    });
-
-    socket.on('event:active_list', (events) => {
-      console.log('Active events received:', events);
-      activeEventsMap.clear();
-      events.forEach(event => {
+      socket.on('event:triggered', (event) => {
+        console.log('Event triggered:', event);
         activeEventsMap.set(event.id, event);
+        updateEventsUI();
+        addEventToLog(`${event.config.icon} ${event.config.name}`);
+
+        const scene = game.scene.scenes[0];
+        if (scene && scene.cameras) {
+          scene.cameras.main.flash(300, 255, 100, 100);
+        }
       });
-      updateEventsUI();
-    });
 
-    function updateEventsUI() {
-      const eventsList = document.getElementById('events-list');
+      socket.on('event:resolved', (data) => {
+        console.log('Event resolved:', data);
+        activeEventsMap.delete(data.eventId);
+        updateEventsUI();
+        addEventToLog(`Evento resuelto`);
+      });
 
-      if (activeEventsMap.size === 0) {
-        eventsList.innerHTML = '<div style="text-align:center; color:#9aa7b2; font-size:12px; padding:10px;">Sin eventos</div>';
-        return;
-      }
+      socket.on('event:active_list', (events) => {
+        console.log('Active events received:', events);
+        activeEventsMap.clear();
+        events.forEach(event => {
+          activeEventsMap.set(event.id, event);
+        });
+        updateEventsUI();
+      });
 
-      let html = '';
-      activeEventsMap.forEach((event, eventId) => {
-        const timeLeft = Math.max(0, Math.ceil((event.endTime - Date.now()) / 1000));
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
+      function updateEventsUI() {
+        const eventsList = document.getElementById('events-list');
 
-        html += `
+        if (activeEventsMap.size === 0) {
+          eventsList.innerHTML = '<div style="text-align:center; color:#9aa7b2; font-size:12px; padding:10px;">Sin eventos</div>';
+          return;
+        }
+
+        let html = '';
+        activeEventsMap.forEach((event, eventId) => {
+          const timeLeft = Math.max(0, Math.ceil((event.endTime - Date.now()) / 1000));
+          const minutes = Math.floor(timeLeft / 60);
+          const seconds = timeLeft % 60;
+
+          html += `
           <div class="event-card" style="border-left-color: #${event.config.color.toString(16)}">
             <div class="event-header">${event.config.icon} ${event.config.name}</div>
             <div class="event-description">${event.config.description}</div>
@@ -1250,57 +1323,58 @@
             ` : ''}
           </div>
         `;
-      });
+        });
 
-      eventsList.innerHTML = html;
-    }
-
-    window.resolveEvent = function(eventId) {
-      console.log('Resolviendo evento:', eventId);
-      socket.emit('event:resolve', { eventId });
-    };
-
-    // ============================================
-    // INICIAR SIMULACIÓN
-    // ============================================
-    const startSimBtn = document.getElementById('start-sim-btn');
-
-    startSimBtn.addEventListener('click', () => {
-      if (simulationStarted) return;
-
-      console.log('Starting simulation...');
-      const placedAreasArray = Array.from(placedAreas);
-
-      if (placedAreasArray.length === 0) {
-        addEventToLog('No hay áreas colocadas');
-        return;
+        eventsList.innerHTML = html;
       }
 
-      simulationStarted = true;
-      startSimBtn.style.display = 'none';
+      window.resolveEvent = function (eventId) {
+        console.log('Resolviendo evento:', eventId);
+        socket.emit('event:resolve', { eventId });
+      };
 
-      socket.emit('simulation:start', {
-        sessionId: sessionId,
-        playerRoles: playerRoles,
-        placedAreas: placedAreasArray
+      // ============================================
+      // INICIAR SIMULACIÓN
+      // ============================================
+      const startSimBtn = document.getElementById('start-sim-btn');
+
+      startSimBtn.addEventListener('click', () => {
+        if (simulationStarted) return;
+
+        console.log('Starting simulation...');
+        const placedAreasArray = Array.from(placedAreas);
+
+        if (placedAreasArray.length === 0) {
+          addEventToLog('No hay áreas colocadas');
+          return;
+        }
+
+        simulationStarted = true;
+        startSimBtn.style.display = 'none';
+
+        socket.emit('simulation:start', {
+          sessionId: sessionId,
+          playerRoles: playerRoles,
+          placedAreas: placedAreasArray
+        });
+
+        addEventToLog('Iniciando simulación...');
       });
 
-      addEventToLog('Iniciando simulación...');
+      socket.on('simulation:started', (data) => {
+        console.log('Simulation started:', data);
+        addEventToLog('Simulación iniciada');
+      });
+
+      socket.on('missions:initialized', (data) => {
+        console.log('Missions initialized:', data);
+        addEventToLog(`Sistema de misiones iniciado (${data.count} misiones)`);
+      });
+
+      window._spatium = { socket, playerId, sessionId };
+
     });
-
-    socket.on('simulation:started', (data) => {
-      console.log('Simulation started:', data);
-      addEventToLog('Simulación iniciada');
-    });
-
-    socket.on('missions:initialized', (data) => {
-      console.log('Missions initialized:', data);
-      addEventToLog(`Sistema de misiones iniciado (${data.count} misiones)`);
-    });
-
-    window._spatium = { socket, playerId, sessionId };
-
-  })();
   </script>
 </body>
+
 </html>
