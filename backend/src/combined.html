@@ -347,11 +347,19 @@
         <div id="playerStats">
           <div class="stat-row">
             <span class="stat-label">Vida</span>
-            <span class="stat-value">100%</span>
+            <span class="stat-value" id="stat-health">100%</span>
           </div>
           <div class="stat-row">
             <span class="stat-label">Oxígeno</span>
-            <span class="stat-value">100%</span>
+            <span class="stat-value" id="stat-oxygen">100%</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Hambre</span>
+            <span class="stat-value" id="stat-hunger">100%</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Energía</span>
+            <span class="stat-value" id="stat-energy">100%</span>
           </div>
         </div>
       </div>
@@ -432,7 +440,6 @@
     const sendBtn = document.getElementById("chat-send");
 
     const gameTimeEl = document.getElementById("gameTime");
-    const playerStatsEl = document.getElementById("playerStats");
     const eventList = document.getElementById("eventList");
 
     let playerId = null;
@@ -440,6 +447,10 @@
     let isConnected = false;
     let isJoining = false;
     let simulationStarted = false;
+    let playerAlive = true;
+    let currentMission = null;
+    const missionOwnership = {};
+    let warningTimeout = null;
 
     const placedAreas = new Set();
     const playerRoles = ['crew_medic'];
@@ -589,6 +600,28 @@
       while (eventList.children.length > 15) eventList.removeChild(eventList.lastChild);
     }
 
+    function showWarning(msg) {
+      const warningDiv = document.createElement('div');
+      warningDiv.textContent = msg;
+      warningDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255,0,0,0.9);
+        color: #fff;
+        padding: 15px 25px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-weight: bold;
+        box-shadow: 0 0 20px rgba(255,0,0,0.5);
+      `;
+      document.body.appendChild(warningDiv);
+
+      clearTimeout(warningTimeout);
+      warningTimeout = setTimeout(() => warningDiv.remove(), 2500);
+    }
+
     // ============================================
     // PHASER
     // ============================================
@@ -608,75 +641,103 @@
     };
     const game = new Phaser.Game(config);
 
-    // --- REEMPLAZAR: definición previa de isometricView / projectIso ---
-  let isometricView = false;
+    let isometricView = false;
 
-  // Convierte coordenadas "mundo" (x,y) a pantalla según modo
-  function worldToScreen(worldX, worldY) {
-    if (!isometricView) return { x: worldX, y: worldY };
-
-    // Proyección isométrica simple
-    const isoX = worldX - worldY;
-    const isoY = (worldX + worldY) / 2;
-
-    // Offset para que la escena quede visible en el canvas.
-    // Ajusta los valores si quieres desplazar la "isla" isométrica.
-    const offsetX = Math.round(gameContainer.clientWidth / 2 - 200);
-    const offsetY = 30;
-
-    return { x: Math.round(isoX + offsetX), y: Math.round(isoY + offsetY) };
-  }
-
-  // Actualiza la posición en pantalla de todas las entidades (áreas, jugador local, otros jugadores)
-  function updateAllDisplayPositions() {
-    const scene = game.scene.scenes[0];
-    if (!scene) return;
-
-    // Áreas
-    (scene.areas || []).forEach(area => {
-      const wx = area.getData('worldX');
-      const wy = area.getData('worldY');
-      const p = worldToScreen(wx, wy);
-      area.x = p.x;
-      area.y = p.y;
-
-      const label = area.getData('label');
-      if (label) {
-        label.x = p.x;
-        label.y = p.y;
-      }
-    });
-
-    // Jugador local
-    if (scene.player) {
-      const wx = scene.player.data.worldX ?? (scene.player.data.x ?? 0);
-      const wy = scene.player.data.worldY ?? (scene.player.data.y ?? 0);
-      const p = worldToScreen(wx, wy);
-      scene.player.sprite.x = p.x;
-      scene.player.sprite.y = p.y;
-      scene.player.nameText.x = p.x;
-      scene.player.nameText.y = p.y - 28;
+    function cartesianToIso(x, y) {
+      return { x: (x - y) * 0.5, y: (x + y) * 0.25 };
     }
 
-    // Otros jugadores
-    Object.values(otherPlayers).forEach(op => {
-      const wx = op.data.worldX ?? op.data.x ?? 0;
-      const wy = op.data.worldY ?? op.data.y ?? 0;
-      const p = worldToScreen(wx, wy);
-      op.sprite.x = p.x;
-      op.sprite.y = p.y;
-      op.nameText.x = p.x;
-      op.nameText.y = p.y - 28;
+    function isoToCartesian(isoX, isoY) {
+      return { x: isoY + isoX * 2, y: isoY - isoX * 2 };
+    }
+
+    function worldToScreen(worldX, worldY) {
+      if (!isometricView) return { x: worldX, y: worldY };
+      const { x, y } = cartesianToIso(worldX, worldY);
+      const offsetX = gameContainer.clientWidth / 2;
+      const offsetY = 150;
+      return { x: x + offsetX, y: y + offsetY };
+    }
+
+    function toggleViewTransition(scene, toIsometric) {
+      const areas = scene.areas || [];
+
+      areas.forEach(area => {
+        const wx = area.getData('worldX');
+        const wy = area.getData('worldY');
+        const newPos = toIsometric ? cartesianToIso(wx, wy) : { x: wx, y: wy };
+        const offsetX = toIsometric ? gameContainer.clientWidth / 2 : 0;
+        const offsetY = toIsometric ? 150 : 0;
+        
+        scene.tweens.add({
+          targets: area,
+          x: newPos.x + offsetX,
+          y: newPos.y + offsetY,
+          duration: 500,
+          ease: 'Sine.easeInOut',
+        });
+
+        const label = area.getData('label');
+        if (label) {
+          scene.tweens.add({
+            targets: label,
+            x: newPos.x + offsetX,
+            y: newPos.y + offsetY,
+            duration: 500,
+            ease: 'Sine.easeInOut',
+          });
+        }
+      });
+
+      if (scene.player) {
+        const wx = scene.player.data.worldX;
+        const wy = scene.player.data.worldY;
+        const p = worldToScreen(wx, wy);
+        
+        scene.tweens.add({
+          targets: scene.player.sprite,
+          x: p.x,
+          y: p.y,
+          duration: 500,
+          ease: 'Sine.easeInOut',
+        });
+        scene.tweens.add({
+          targets: scene.player.nameText,
+          x: p.x,
+          y: p.y - 28,
+          duration: 500,
+          ease: 'Sine.easeInOut',
+        });
+      }
+
+      Object.values(otherPlayers).forEach(op => {
+        const wx = op.data.worldX;
+        const wy = op.data.worldY;
+        const p = worldToScreen(wx, wy);
+        
+        scene.tweens.add({
+          targets: op.sprite,
+          x: p.x,
+          y: p.y,
+          duration: 500,
+          ease: 'Sine.easeInOut',
+        });
+        scene.tweens.add({
+          targets: op.nameText,
+          x: p.x,
+          y: p.y - 28,
+          duration: 500,
+          ease: 'Sine.easeInOut',
+        });
+      });
+    }
+
+    document.getElementById('toggle-view-btn').addEventListener('click', () => {
+      const scene = game.scene.scenes[0];
+      isometricView = !isometricView;
+      addEventToLog(isometricView ? 'Vista: Isométrica' : 'Vista: 2D');
+      toggleViewTransition(scene, isometricView);
     });
-  }
-
-  // Toggle del botón ya presente en el DOM
-  document.getElementById('toggle-view-btn').addEventListener('click', () => {
-    isometricView = !isometricView;
-    addEventToLog(isometricView ? 'Vista: Isométrica' : 'Vista: 2D');
-    updateAllDisplayPositions();
-  });
-
 
     window.addEventListener('keydown', (e) => {
       const chatInput = document.getElementById('chat-input');
@@ -694,7 +755,6 @@
     function create(){
       const scene = this;
 
-      // Background grid
       const graphics = this.add.graphics();
       graphics.lineStyle(1, 0x16213e, 0.25);
       for (let x=0; x<1200; x+=50) graphics.lineBetween(x,0,x,800);
@@ -728,7 +788,6 @@
         addEventToLog('Conectado al servidor (juego)');
       });
 
-      // --- REEMPLAZAR el socket.on('state:update', ...) existente ---
       socket.on('state:update', (state) => {
         currentGameTime = state.gameTime || 0;
         updateGameTimeUI(currentGameTime);
@@ -736,7 +795,6 @@
         const scene = game.scene.scenes[0];
         const players = state.players || {};
 
-        // Asegurarnos de que la escena exista antes de manipular
         if (!scene) return;
 
         Object.values(players).forEach(pd => {
@@ -746,7 +804,6 @@
             if (!scene.player) {
               scene.player = createPlayer(scene, pd, true);
             } else {
-              // Guardar coordenadas del mundo y animar a pantalla
               scene.player.data.worldX = pd.x;
               scene.player.data.worldY = pd.y;
               scene.tweens.add({
@@ -781,7 +838,6 @@
           }
         });
 
-        // Eliminar jugadores que ya no existen
         Object.keys(otherPlayers).forEach(id => {
           if (!players[id]) {
             try {
@@ -792,7 +848,6 @@
           }
         });
       });
-
 
       socket.on('game:event', (ev) => {
         addEventToLog(ev.type || 'evento');
@@ -815,40 +870,37 @@
 
       testAreas.forEach(area => {
         const { x, y, width, height, color, type } = area;
-        const p = worldToScreen(x, y);
 
-        // Dibujar rombo isométrico
-        const diamond = scene.add.polygon(
-          p.x, p.y,
-          [0, -height / 2, width / 2, 0, 0, height / 2, -width / 2, 0],
-          color,
-          0.35
-        );
-        diamond.setStrokeStyle(2, color);
-        diamond.setData('worldX', x);
-        diamond.setData('worldY', y);
-        diamond.setData('width', width);
-        diamond.setData('height', height);
-        diamond.setData('areaType', type);
+        const rect = scene.add.rectangle(x, y, width, height, color, 0.6);
+        rect.setStrokeStyle(2, color);
+        rect.setInteractive({ useHandCursor: true });
+        rect.setData('worldX', x);
+        rect.setData('worldY', y);
+        rect.setData('width', width);
+        rect.setData('height', height);
+        rect.setData('areaType', type);
 
-        const label = scene.add.text(p.x, p.y, type, {
+        const label = scene.add.text(x, y, type, {
           fontSize: '12px',
           color: '#fff',
           backgroundColor: '#000',
           padding: { x: 4, y: 2 }
         }).setOrigin(0.5);
 
-        diamond.setData('label', label);
+        rect.setData('label', label);
 
-        scene.areas.push(diamond);
+        rect.on('pointerover', () => rect.setAlpha(0.8));
+        rect.on('pointerout', () => rect.setAlpha(0.6));
+
+        scene.areas.push(rect);
         placedAreas.add(type);
       });
     }
 
-    
     function update() {
       const scene = this;
       if (!scene.player) return;
+      if (!playerAlive) return;
 
       const speed = scene.keys.SHIFT.isDown ? 8 : 5;
       let dx = 0;
@@ -874,45 +926,36 @@
         socket.emit('player:move', { dx, dy, direction });
       }
 
-      // Detección manual: usamos coords del sprite del jugador
-      const px = scene.player.sprite.x;
-      const py = scene.player.sprite.y;
+      if (simulationStarted && currentMission && currentMission.status === 'active') {
+        const px = scene.player.data.worldX;
+        const py = scene.player.data.worldY;
 
-      let currentArea = null;
-      (scene.areas || []).forEach(area => {
-        const w = area.getData('width');
-        const h = area.getData('height');
-        const left = area.x - w / 2;
-        const right = area.x + w / 2;
-        const top = area.y - h / 2;
-        const bottom = area.y + h / 2;
+        let inCorrectArea = false;
+        (scene.areas || []).forEach(area => {
+          if (area.getData('areaType') === currentMission.config.area) {
+            const ax = area.getData('worldX');
+            const ay = area.getData('worldY');
+            const w = area.getData('width');
+            const h = area.getData('height');
 
-        if (px >= left && px <= right && py >= top && py <= bottom) {
-          currentArea = area.getData('areaType');
-        }
-      });
-
-      // Manejo del progreso dinámico
-      if (simulationStarted && allMissions.length > 0) {
-        allMissions.forEach(mission => {
-          if (mission.status === 'completed') return;
-          if (mission.config.area === currentArea) {
-            mission.progress = Math.min(100, mission.progress + 0.4); // sube lentamente
-          } else {
-            mission.progress = Math.max(0, mission.progress - 0.1); // baja lentamente
-          }
-
-          updateMissionProgress(mission.id, mission.progress);
-
-          // Completar misión si llega al 100%
-          if (mission.progress >= 100 && mission.status !== 'completed') {
-            mission.status = 'completed';
-            completedCount++;
-            updateMissionsUI();
-            addEventToLog(`${mission.config.name} completada`);
-            socket.emit('mission:complete', { missionId: mission.id });
+            const dist = Math.sqrt((px - ax) ** 2 + (py - ay) ** 2);
+            if (dist < Math.max(w, h) / 2 + 20) {
+              inCorrectArea = true;
+            }
           }
         });
+
+        if (inCorrectArea) {
+          currentMission.progress = Math.min(100, currentMission.progress + 0.5);
+        } else {
+          currentMission.progress = Math.max(0, currentMission.progress - 0.2);
+        }
+
+        updateMissionProgress(currentMission.id, currentMission.progress);
+
+        if (currentMission.progress >= 100) {
+          completeMission(currentMission.id);
+        }
       }
     }
 
@@ -940,32 +983,10 @@
         padding: {x: 4, y: 2}
       }).setOrigin(0.5);
 
-      // Guardamos coordenadas del mundo en data para reproyectar luego
       const data = { worldX: pd.x || 200, worldY: pd.y || 200, id: pd.id };
 
       return { sprite, nameText, data };
     }
-
-
-    function updateOtherPlayer(scene, pd){
-      const p = otherPlayers[pd.id];
-      if (!p) return;
-
-      p.data.worldX = pd.x;
-      p.data.worldY = pd.y;
-
-      const s = worldToScreen(pd.x || 200, pd.y || 200);
-      scene.tweens.add({
-        targets: [p.sprite],
-        x: s.x,
-        y: s.y,
-        duration: 50,
-        ease: 'Linear'
-      });
-      p.nameText.x = s.x;
-      p.nameText.y = s.y - 28;
-    }
-
 
     function getDirection(dx, dy){
       if (dy < 0 && dx === 0) return 'up';
@@ -985,25 +1006,29 @@
       gameTimeEl.textContent = `${mins}:${secs}`;
     }
 
-    function updatePlayerStatsUI(pd){
-      playerStatsEl.innerHTML = `
-        <div class="stat-row">
-          <span class="stat-label">Vida</span>
-          <span class="stat-value">${pd.health}%</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Oxígeno</span>
-          <span class="stat-value">${pd.oxygen}%</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Hambre</span>
-          <span class="stat-value">${pd.hunger || 100}%</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Energía</span>
-          <span class="stat-value">${pd.energy || 100}%</span>
-        </div>
-      `;
+    function updatePlayerStatsUI(pd) {
+      if (!pd) return;
+
+      const healthEl = document.getElementById('stat-health');
+      const oxygenEl = document.getElementById('stat-oxygen');
+      const hungerEl = document.getElementById('stat-hunger');
+      const energyEl = document.getElementById('stat-energy');
+
+      if (healthEl) healthEl.textContent = `${pd.health}%`;
+      if (oxygenEl) oxygenEl.textContent = `${pd.oxygen}%`;
+      if (hungerEl) hungerEl.textContent = `${pd.hunger || 100}%`;
+      if (energyEl) energyEl.textContent = `${pd.energy || 100}%`;
+
+      if (playerAlive && pd.health <= 0) {
+        playerAlive = false;
+        addEventToLog('💀 Has muerto. Puedes observar pero no moverte ni completar misiones.');
+
+        const scene = game.scene.scenes[0];
+        if (scene.player && scene.player.nameText) {
+          scene.player.nameText.setText(`[DEAD] ${scene.player.nameText.text}`);
+          scene.player.nameText.setColor('#888');
+        }
+      }
     }
 
     // ============================================
@@ -1017,40 +1042,22 @@
       console.log('Missions assigned:', data);
       allMissions = data.missions || [];
       allMissions.forEach(mission => {
+        mission.progress = 0;
+        mission.status = 'pending';
         activeMissionsMap.set(mission.id, mission);
       });
       updateMissionsUI();
       addEventToLog(`${allMissions.length} misiones asignadas`);
     });
 
-    socket.on('mission:activated', (data) => {
-      console.log('Mission activated:', data);
-      const mission = activeMissionsMap.get(data.mission.id);
-      if (mission) {
-        mission.status = 'active';
-        mission.progress = 0;
-        updateMissionsUI();
-        addEventToLog(`${data.mission.config.name}`);
-      }
-    });
-
-    socket.on('mission:progress', (data) => {
-      const mission = activeMissionsMap.get(data.missionId);
-      if (mission) {
-        mission.progress = data.progress;
-        updateMissionProgress(data.missionId, data.progress);
-      }
-    });
-
     socket.on('mission:completed', (data) => {
-      console.log('Mission completed:', data);
+      console.log('Mission completed from server:', data);
       const mission = activeMissionsMap.get(data.mission.id);
       if (mission) {
         mission.status = 'completed';
         mission.progress = 100;
         completedCount++;
         updateMissionsUI();
-        addEventToLog(`${data.mission.config.name} completada`);
 
         const scene = game.scene.scenes[0];
         if (scene && scene.cameras) {
@@ -1058,6 +1065,29 @@
         }
       }
     });
+
+    function completeMission(missionId) {
+      const mission = activeMissionsMap.get(missionId);
+      if (!mission || mission.status === 'completed') return;
+
+      mission.status = 'completed';
+      mission.progress = 100;
+      completedCount++;
+      currentMission = null;
+
+      addEventToLog(`✅ ${mission.config.name} completada`);
+      updateMissionsUI();
+
+      socket.emit('mission:activate', {
+        missionId: mission.id,
+        playerId: playerId || socket.id
+      });
+
+      const scene = game.scene.scenes[0];
+      if (scene && scene.cameras) {
+        scene.cameras.main.flash(400, 100, 255, 100);
+      }
+    }
 
     function updateMissionsUI() {
       const missionsList = document.getElementById('missions-list');
@@ -1074,36 +1104,73 @@
         return;
       }
 
-      let html = '';
-      allMissions.forEach(mission => {
+      missionsList.innerHTML = '';
+
+      allMissions.forEach((mission) => {
         let statusClass = '';
         let statusText = 'Pendiente';
+        let isOwned = missionOwnership[mission.id] === playerId;
+        let isClaimed = missionOwnership[mission.id] && !isOwned;
 
-        if (mission.status === 'active') {
+        if (mission.status === 'active' || isOwned) {
           statusClass = 'active';
-          statusText = 'En progreso';
+          statusText = isOwned ? 'Tu misión' : 'En progreso';
         } else if (mission.status === 'completed') {
           statusClass = 'completed';
           statusText = 'Completada';
+        } else if (isClaimed) {
+          statusText = 'Reclamada';
         }
 
-        html += `
-          <div class="mission-card ${statusClass}">
-            <div class="mission-header">
-              <div class="mission-name">${mission.config.name}</div>
-              <div class="mission-status">${statusText}</div>
-            </div>
-            <div class="mission-description">${mission.config.description}</div>
-            <div class="mission-area">${mission.config.area}</div>
-            <div class="mission-progress-bar">
-              <div class="mission-progress-fill" id="mission-progress-${mission.id}" style="width: ${mission.progress}%"></div>
-            </div>
-            <div class="mission-progress-text">${Math.floor(mission.progress)}%</div>
+        const card = document.createElement('div');
+        card.className = `mission-card ${statusClass}`;
+        card.style.cursor = (mission.status === 'completed' || isClaimed) ? 'not-allowed' : 'pointer';
+        card.style.opacity = (mission.status === 'completed' || isClaimed) ? '0.6' : '1';
+        
+        card.innerHTML = `
+          <div class="mission-header">
+            <div class="mission-name">${mission.config.name}</div>
+            <div class="mission-status">${statusText}</div>
           </div>
+          <div class="mission-description">${mission.config.description}</div>
+          <div class="mission-area">${mission.config.area}</div>
+          <div class="mission-progress-bar">
+            <div class="mission-progress-fill" id="mission-progress-${mission.id}" style="width: ${mission.progress}%"></div>
+          </div>
+          <div class="mission-progress-text">${Math.floor(mission.progress)}%</div>
         `;
-      });
 
-      missionsList.innerHTML = html;
+        card.addEventListener('click', () => {
+          if (!playerAlive) {
+            showWarning('Estás muerto y no puedes reclamar misiones');
+            return;
+          }
+
+          if (mission.status === 'completed') {
+            showWarning('Esta misión ya está completada');
+            return;
+          }
+
+          if (currentMission && currentMission.status !== 'completed') {
+            showWarning('Ya tienes una misión asignada');
+            return;
+          }
+
+          if (missionOwnership[mission.id] && missionOwnership[mission.id] !== playerId) {
+            showWarning('Otro jugador ya reclamó esta misión');
+            return;
+          }
+
+          missionOwnership[mission.id] = playerId;
+          currentMission = mission;
+          mission.status = 'active';
+          mission.progress = 0;
+          updateMissionsUI();
+          addEventToLog(`📋 Reclamaste: ${mission.config.name}`);
+        });
+
+        missionsList.appendChild(card);
+      });
     }
 
     function updateMissionProgress(missionId, progress) {
@@ -1111,29 +1178,20 @@
       if (progressBar) {
         progressBar.style.width = `${progress}%`;
       }
-    }
 
-    window.activateMissionForArea = function(areaType) {
-      console.log('Activating mission for area:', areaType);
-
-      const missionsForArea = allMissions.filter(
-        m => m.config.area === areaType && m.status === 'pending'
-      );
-
-      if (missionsForArea.length === 0) {
-        console.log('No pending missions for area:', areaType);
-        addEventToLog(`Sin misiones en ${areaType}`);
-        return;
+      const mission = activeMissionsMap.get(missionId);
+      if (mission) {
+        const card = Array.from(document.querySelectorAll('.mission-card')).find(c => 
+          c.querySelector(`#mission-progress-${missionId}`)
+        );
+        if (card) {
+          const progressText = card.querySelector('.mission-progress-text');
+          if (progressText) {
+            progressText.textContent = `${Math.floor(progress)}%`;
+          }
+        }
       }
-
-      const mission = missionsForArea[0];
-      console.log('Activating mission:', mission.config.name);
-
-      socket.emit('mission:activate', {
-        missionId: mission.id,
-        playerId: playerId || socket.id
-      });
-    };
+    }
 
     // ============================================
     // SISTEMA DE EVENTOS

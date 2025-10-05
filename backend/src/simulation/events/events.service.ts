@@ -11,7 +11,7 @@ export class EventsService {
   // Configuración
   private readonly CHECK_INTERVAL = 15000; // 15 segundos
   private readonly MIN_TIME_BETWEEN_EVENTS = 20000; // 20 segundos
-  private readonly MAX_CONCURRENT_EVENTS = 2;
+  private readonly MAX_CONCURRENT_EVENTS = 2; // Máximo 2 eventos activos a la vez
   
   private lastEventTime: number = 0;
 
@@ -145,7 +145,7 @@ export class EventsService {
 
       // Aplicar efectos a todos los jugadores conectados
       this.applyEventEffects(event);
-    }, 1000); // Cada segundo
+    }, 40000); // Cada 40 segundos
 
     // Guardar referencia al intervalo
     (event as any).effectInterval = effectInterval;
