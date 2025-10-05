@@ -23,15 +23,9 @@ export default function LobbyPage() {
   }
 
   const handleJoinSession = () => {
-    if (!playerName.trim()) {
-      alert("Please enter your name")
-      return
-    }
-    if (!sessionCode.trim()) {
-      alert("Please enter a session code")
-      return
-    }
-    router.push(`/pages/room/${sessionCode.toUpperCase()}?name=${encodeURIComponent(playerName)}`)
+    const testPlayerName = playerName.trim() || "TestPlayer"
+    const testSessionCode = sessionCode.trim() || "TEST123"
+    router.push(`/pages/room/${testSessionCode.toUpperCase()}?name=${encodeURIComponent(testPlayerName)}`)
   }
 
   return (
