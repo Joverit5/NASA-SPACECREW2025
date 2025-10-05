@@ -357,7 +357,7 @@ export default function HomePage() {
             {/* Team Member 3 */}
             <div className="border-2 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-3 sm:p-4 text-center hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
               <div className="aspect-square border-2 border-cyan-400/50 bg-slate-800/50 mb-3 sm:mb-4 flex items-center justify-center overflow-hidden relative">
-                <Image src="/astronaut-profile.jpg" alt="Team Member 3" fill className="object-cover" />
+                <Image src="/IsabellaArrieta.png" alt="Team Member 3" fill className="object-cover" />
               </div>
               <p className="text-cyan-400 font-bold text-xs sm:text-sm mb-1">Isabella Sofía Arrieta Guardo</p>
               <p className="text-blue-300 text-[0.6rem] sm:text-xs break-all">arrietai@utb.edu.co</p>
