@@ -26,7 +26,7 @@ export class GameService {
     // Actualizar el tiempo cada segundo
     this.gameTimer = setInterval(() => {
       this.state.gameTime = Math.floor((Date.now() - this.state.startedAt!) / 1000);
-      this.checkTimeBasedEvents(io);
+      //this.checkTimeBasedEvents(io);
     }, 1000);
 
     // Broadcast del estado cada 5 segundos para sincronizar tiempo
@@ -51,7 +51,7 @@ export class GameService {
   getGameTime(): number {
     return this.state.gameTime;
   }
-
+  /*
   // 🎯 Sistema de Eventos basados en Tiempo
   private checkTimeBasedEvents(io: Server) {
     const time = this.state.gameTime;
@@ -102,7 +102,7 @@ export class GameService {
     console.log("📉 Stats degradadas por el tiempo");
     this.broadcastStateImmediate(io);
   }
-
+  */
   // 🔧 Métodos existentes (sin cambios)
   addPlayer(id: string, data: Partial<PlayerState> = {}) {
     this.state.players[id] = {
