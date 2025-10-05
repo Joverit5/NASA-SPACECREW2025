@@ -67,7 +67,7 @@ if (ChatGateway && chatService) {
 const gameService = new GameService();
 gameService.setIoInstance(io);
 
-// ⭐ NUEVO: Inicializar Simulation Gateway
+// Inicializar Simulation Gateway
 const simulationGateway = new SimulationGateway(io, gameService);
 console.log("✅ Simulation Gateway inicializado");
 
@@ -79,7 +79,7 @@ io.on("connection", (socket) => {
     const gameController = new GameController(io, gameService);
     gameController.registerHandlers(socket);
     
-    // ⭐ NUEVO: Registrar handlers de simulación
+    // Registrar handlers de simulación
     simulationGateway.registerClientHandlers(socket);
   } catch (error) {
     if (error instanceof Error) {
@@ -90,21 +90,9 @@ io.on("connection", (socket) => {
   }
 });
 
-// ⭐ NUEVO: Iniciar simulación cuando haya jugadores
-io.on("connection", () => {
-  const playerCount = Object.keys(gameService.getState().players).length;
-  if (playerCount === 1) {
-    // Primer jugador conectado, iniciar simulación
-    setTimeout(() => {
-      simulationGateway.start();
-      console.log("🚀 Simulación iniciada automáticamente");
-    }, 2000);
-  }
-});
-
 // Ruta principal - servir combined.html
 app.get("/", (req, res) => {
-  const htmlPath = path.join(__dirname, "../src/combined.html");
+  const htmlPath = path.join(__dirname, "combined.html");
   console.log(`📄 Intentando servir: ${htmlPath}`);
   
   res.sendFile(htmlPath, (err) => {
@@ -158,7 +146,7 @@ process.on("unhandledRejection", (reason, promise) => {
 
 process.on("SIGINT", () => {
   console.log("\n👋 Cerrando servidor...");
-  simulationGateway.stop(); // ⭐ Detener simulación
+  simulationGateway.stop();
   httpServer.close(() => {
     console.log("✅ Servidor cerrado");
     process.exit(0);
