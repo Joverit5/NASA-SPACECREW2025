@@ -1,4 +1,4 @@
-import { io, Socket } from "socket.io-client";
+import clientIo from "socket.io-client";
 import { Server } from "socket.io";
 import {
   ClientToServerEvents,
@@ -6,8 +6,8 @@ import {
 } from "./types";
 
 // 🔹 Cliente
-export function createClientSocket(url: string): Socket<ServerToClientEvents, ClientToServerEvents> {
-  return io(url, { transports: ["websocket"] });
+export function createClientSocket(url: string): ReturnType<typeof clientIo> {
+  return clientIo(url, { transports: ["websocket"] });
 }
 
 // 🔹 Servidor
