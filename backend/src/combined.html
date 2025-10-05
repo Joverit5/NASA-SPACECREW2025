@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NASA SPATIUM — Multiplayer + Chat</title>
 
-  <!-- Phaser y Socket.IO desde CDN -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
@@ -26,7 +25,6 @@
       -webkit-font-smoothing:antialiased;
     }
 
-    /* Layout: game area (left) + chat (right) */
     .app {
       display: flex;
       height: 100vh;
@@ -35,7 +33,6 @@
       padding: 12px;
     }
 
-    /* Game container (Phaser canvas injected here) */
     #game-wrapper {
       flex: 1 1 auto;
       position: relative;
@@ -46,14 +43,12 @@
       min-width: 300px;
     }
 
-    /* UI overlays inside the game */
     #ui-overlay {
       position: absolute;
       top: 12px;
       left: 12px;
       z-index: 30;
       background: rgba(0,0,0,0.45);
-      -webkit-backdrop-filter: blur(4px);
       backdrop-filter: blur(4px);
       border-radius: 8px;
       padding: 10px 12px;
@@ -78,7 +73,6 @@
     #ui-overlay .time { color: var(--accent); font-weight:700; font-size:18px; text-align:center; }
     #eventLog { position:absolute; right:12px; bottom:12px; width:300px; max-height:220px; overflow:auto; z-index:30; background: rgba(0,0,0,0.45); border-radius:8px; padding:10px; color:#dbeeff; }
 
-    /* Chat panel */
     #chat-panel {
       width: var(--chat-width);
       max-width: 40%;
@@ -116,7 +110,6 @@
     #chat-input { flex:1; padding:10px; border-radius:8px; border:1px solid #223; background:#07121a; color:#eaf6ff; }
     #chat-send { background:var(--accent); border:none; padding:10px 12px; border-radius:8px; color:#012; font-weight:700; cursor:pointer; }
 
-    /* Small responsive tweaks */
     @media (max-width:900px){
       .app{ flex-direction:column; padding:8px; }
       #chat-panel{ width:100%; max-width:none; height:320px; }
@@ -126,26 +119,22 @@
 </head>
 <body>
   <div class="app">
-    <!-- GAME -->
     <div id="game-wrapper">
       <div id="game-container"></div>
 
-      <!-- in-game UI overlay -->
       <div id="ui-overlay">
         <div class="time" id="gameTime">00:00</div>
         <div id="playerStats"></div>
       </div>
 
-      <!-- event log -->
-      <div id="eventLog"><strong>📋 Event Log</strong><div id="eventList"></div></div>
+      <div id="eventLog"><strong>Event Log</strong><div id="eventList"></div></div>
     </div>
 
-    <!-- CHAT -->
     <aside id="chat-panel" role="complementary" aria-label="Chat">
       <div id="chat-header">
-        <span>💬 Chat Espacial</span>
+        <span>Chat Espacial</span>
         <div class="spacer"></div>
-        <div id="status" title="Estado de conexión">Conectando...</div>
+        <div id="status" title="Estado de conexion">Conectando...</div>
       </div>
 
       <div id="messages" aria-live="polite" aria-atomic="false"></div>
@@ -159,34 +148,26 @@
 
   <script>
   (function(){
-    // -------------------------
-    // Config socket (auto detect)
-    // -------------------------
     const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-    const SERVER_URL = isLocal ? (location.origin) : location.origin; // same origin by default
+    const SERVER_URL = isLocal ? (location.origin) : location.origin;
     const socket = io(SERVER_URL);
 
-    // Session for chat
     const sessionId = "sala-demo";
 
-    // Elements
     const statusDiv = document.getElementById("status");
     const messagesDiv = document.getElementById("messages");
     const inputEl = document.getElementById("chat-input");
     const sendBtn = document.getElementById("chat-send");
 
-    // Game UI
     const gameTimeEl = document.getElementById("gameTime");
     const playerStatsEl = document.getElementById("playerStats");
     const eventList = document.getElementById("eventList");
 
-    // Client state
     let playerId = null;
     let playerName = null;
     let isConnected = false;
     let isJoining = false;
 
-    // prompt name (blocking-ish)
     function promptForName(){
       let name = prompt("Tu nombre (1-20 caracteres):");
       if (!name) return promptForName();
@@ -195,13 +176,11 @@
       return name;
     }
 
-    // update status
     function setStatus(text, cls = ''){
       statusDiv.textContent = text;
       statusDiv.className = cls;
     }
 
-    // system message in chat
     function addSystem(text){
       const d = document.createElement('div');
       d.className = 'message system';
@@ -210,11 +189,10 @@
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    // user message
     function addMessage(msg){
       const d = document.createElement('div');
       d.className = 'message ' + (msg.playerId === playerId ? 'you' : 'other');
-      d.textContent = (msg.playerId === playerId ? '[Tú] ' : `[${msg.playerName}] `) + msg.text;
+      d.textContent = (msg.playerId === playerId ? '[Tu] ' : `[${msg.playerName}] `) + msg.text;
       messagesDiv.appendChild(d);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
@@ -228,7 +206,6 @@
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    // join attempt
     function attemptJoin(name){
       if (isJoining) return;
       isJoining = true;
@@ -236,9 +213,6 @@
       socket.emit('join_session', { sessionId, player: { name } });
     }
 
-    // ------------------------------------------------
-    // Socket listeners (chat + game share same socket)
-    // ------------------------------------------------
     socket.on('connect', () => {
       console.log('socket connected', socket.id);
       playerName = promptForName();
@@ -253,7 +227,6 @@
       inputEl.disabled = false;
       sendBtn.disabled = false;
       addSystem(`Te has unido a ${data.sessionId} como ${data.playerName}`);
-      // render chat history if provided (server sends chat_history separately)
     });
 
     socket.on('join_rejected', (data) => {
@@ -263,13 +236,11 @@
       if (data.reason === 'room_full') {
         inputEl.disabled = true;
         sendBtn.disabled = true;
-        addSystem("Sala llena. Intenta más tarde.");
-        // disconnect after a short timeout (server may already disconnect client)
+        addSystem("Sala llena. Intenta mas tarde.");
         setTimeout(()=> socket.disconnect(), 400);
         return;
       }
       if (data.reason === 'name_taken') {
-        // ask for new name
         setTimeout(()=> {
           const newName = promptForName();
           attemptJoin(newName);
@@ -307,22 +278,22 @@
       setStatus('Desconectado', 'error');
       inputEl.disabled = true;
       sendBtn.disabled = true;
-      addSystem('Conexión perdida con el servidor');
+      addSystem('Conexion perdida con el servidor');
     });
 
     socket.on('connect_error', (err) => {
-      setStatus('Error de conexión', 'error');
+      setStatus('Error de conexion', 'error');
       showError('No se pudo conectar al servidor');
     });
 
-    // ---------------------
-    // Input handlers (chat)
-    // ---------------------
     sendBtn.addEventListener('click', () => {
       sendChat();
     });
-    inputEl.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter') sendChat();
+    inputEl.addEventListener('keypress', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault(); // Prevenir salto de línea
+        sendChat();
+      }
     });
 
     function sendChat(){
@@ -333,29 +304,25 @@
       inputEl.value = '';
     }
 
-    // ---------------------
-    // Add event to log (game UI)
-    // ---------------------
     function addEventToLog(message){
       const item = document.createElement('div');
       item.className = 'event-item';
       const t = new Date().toLocaleTimeString();
       item.textContent = `[${t}] ${message}`;
       eventList.insertBefore(item, eventList.firstChild);
-      // cap last 12
       while (eventList.children.length > 12) eventList.removeChild(eventList.lastChild);
     }
 
-    // ----------------------------------------------------
-    // PHASER setup (kept similar to tu multiplayer.html)
-    // ----------------------------------------------------
+    // ============================================
+    // PHASER - CORRECCION DE SINCRONIZACION
+    // ============================================
     let myPlayerId = null;
     let otherPlayers = {};
     let currentGameTime = 0;
 
     const config = {
       type: Phaser.AUTO,
-      width: 1100, // width flexible — container will clip
+      width: 1100,
       height: 700,
       parent: 'game-container',
       backgroundColor: '#000000',
@@ -364,43 +331,107 @@
     };
     const game = new Phaser.Game(config);
 
+    window.addEventListener('keydown', (e) => {
+      const chatInput = document.getElementById('chat-input');
+      // Si el foco está en el input del chat...
+      if (document.activeElement === chatInput) {
+        // Evita que Phaser o el navegador bloqueen la barra espaciadora
+        e.stopImmediatePropagation();
+        if (e.code === 'Space') {
+          e.preventDefault(); // evita que el scroll o Phaser lo intercepte
+          chatInput.value += ' '; // inserta el espacio manualmente
+        }
+      }
+    });
+
     function preload(){}
+    
     function create(){
       const scene = this;
-      // background grid
+      
+      // Background grid
       const graphics = this.add.graphics();
       graphics.lineStyle(1, 0x16213e, 0.25);
       for (let x=0; x<1200; x+=50) graphics.lineBetween(x,0,x,800);
       for (let y=0; y<800; y+=50) graphics.lineBetween(0,y,1200,y);
 
-      this.add.text(550, 16, '🌊 NASA SPATIUM - Multiplayer', { fontSize:'22px', color:'#66ccff', fontFamily:'Segoe UI' }).setOrigin(0.5,0);
+      this.add.text(550, 16, 'NASA SPATIUM - Multiplayer', { 
+        fontSize:'22px', 
+        color:'#66ccff', 
+        fontFamily:'Segoe UI' 
+      }).setOrigin(0.5,0);
 
       scene.player = null;
       scene.cursors = this.input.keyboard.createCursorKeys();
-      scene.keys = this.input.keyboard.addKeys({ W:Phaser.Input.Keyboard.KeyCodes.W, A:Phaser.Input.Keyboard.KeyCodes.A, S:Phaser.Input.Keyboard.KeyCodes.S, D:Phaser.Input.Keyboard.KeyCodes.D, SHIFT:Phaser.Input.Keyboard.KeyCodes.SHIFT });
+      scene.keys = this.input.keyboard.addKeys({ 
+        SHIFT: Phaser.Input.Keyboard.KeyCodes.SHIFT 
+      });
 
-      // socket events for game (shared)
+      const chatInput = document.getElementById('chat-input');
+
+      chatInput.addEventListener('focus', () => {
+        // Desactivar captura de teclado de Phaser
+        scene.input.keyboard.enabled = false;
+      });
+      
+      chatInput.addEventListener('blur', () => {
+        // Reactivar captura de teclado de Phaser
+        scene.input.keyboard.enabled = true;
+      });
+
+      const canvas = scene.game.canvas;
+      canvas.addEventListener("pointerdown", () => {
+        if (document.activeElement === chatInput) {
+          chatInput.blur();
+        }
+      });
+
       socket.on('connect', () => {
         myPlayerId = socket.id;
         console.log('Game socket connected', myPlayerId);
         addEventToLog('Conectado al servidor (juego)');
       });
 
+      // CORRECCION: Interpolar TODOS los jugadores desde el servidor
       socket.on('state:update', (state) => {
         currentGameTime = state.gameTime || 0;
         updateGameTimeUI(currentGameTime);
-        // update or create players
+        
         Object.values(state.players || {}).forEach(pd => {
           if (pd.id === myPlayerId) {
-            if (!scene.player) scene.player = createPlayer(scene, pd, true);
+            // Tu jugador - crear o interpolar
+            if (!scene.player) {
+              scene.player = createPlayer(scene, pd, true);
+            } else {
+              // Interpolar suavemente a la posicion del servidor
+              scene.tweens.add({
+                targets: scene.player.sprite,
+                x: pd.x,
+                y: pd.y,
+                duration: 50,
+                ease: 'Linear'
+              });
+              scene.player.nameText.x = pd.x;
+              scene.player.nameText.y = pd.y - 28;
+            }
             updatePlayerStatsUI(pd);
           } else {
-            if (!otherPlayers[pd.id]) otherPlayers[pd.id] = createPlayer(scene, pd, false);
+            // Otros jugadores
+            if (!otherPlayers[pd.id]) {
+              otherPlayers[pd.id] = createPlayer(scene, pd, false);
+            }
             updateOtherPlayer(scene, pd);
           }
         });
-        // remove missing
-        Object.keys(otherPlayers).forEach(id => { if (!state.players[id]) { otherPlayers[id].sprite.destroy(); otherPlayers[id].nameText.destroy(); delete otherPlayers[id]; }});
+        
+        // Remover jugadores desconectados
+        Object.keys(otherPlayers).forEach(id => { 
+          if (!state.players[id]) { 
+            otherPlayers[id].sprite.destroy(); 
+            otherPlayers[id].nameText.destroy(); 
+            delete otherPlayers[id]; 
+          }
+        });
       });
 
       socket.on('game:event', (ev) => {
@@ -411,47 +442,73 @@
 
     function update(){
       if (!this.player) return;
+      
       const speed = this.keys.SHIFT.isDown ? 8 : 5;
-      let dx=0, dy=0, moved=false;
-      if (this.cursors.up.isDown || this.keys.W.isDown) { dy=-1; moved=true; }
-      if (this.cursors.down.isDown || this.keys.S.isDown) { dy=1; moved=true; }
-      if (this.cursors.left.isDown || this.keys.A.isDown) { dx=-1; moved=true; }
-      if (this.cursors.right.isDown || this.keys.D.isDown) { dx=1; moved=true; }
+      let dx = 0;
+      let dy = 0;
+      let moved = false;
+      
+      if (this.cursors.up.isDown) { dy = -1; moved = true; }
+      if (this.cursors.down.isDown) { dy = 1; moved = true; }
+      if (this.cursors.left.isDown) { dx = -1; moved = true; }
+      if (this.cursors.right.isDown) { dx = 1; moved = true; }
 
       if (moved) {
-        if (dx !==0 && dy !==0) { const m = Math.sqrt(dx*dx+dy*dy); dx=(dx/m)*speed; dy=(dy/m)*speed; } else { dx*=speed; dy*=speed; }
-        // client side move
-        this.player.sprite.x += dx; this.player.sprite.y += dy;
-        this.player.nameText.x = this.player.sprite.x; this.player.nameText.y = this.player.sprite.y - 28;
-        const direction = getDirection(dx,dy);
+        // Normalizar diagonal
+        if (dx !== 0 && dy !== 0) { 
+          const m = Math.sqrt(dx*dx + dy*dy); 
+          dx = (dx/m) * speed; 
+          dy = (dy/m) * speed; 
+        } else { 
+          dx *= speed; 
+          dy *= speed; 
+        }
+        
+        // CORRECCION: SOLO enviar al servidor, NO mover localmente
+        const direction = getDirection(dx, dy);
         socket.emit('player:move', { dx, dy, direction });
       }
     }
 
     function createPlayer(scene, pd, local){
-      // draw a texture for the player id
       const key = 'player_' + pd.id;
       if (!scene.textures.exists(key)) {
         const g = scene.add.graphics();
         const color = local ? 0x3498db : 0xe74c3c;
-        g.fillStyle(color,1); g.fillCircle(20,20,15);
-        g.lineStyle(2, 0xffffff, 1); g.strokeCircle(20,20,15);
-        g.generateTexture(key,40,40); g.destroy();
+        g.fillStyle(color, 1); 
+        g.fillCircle(20, 20, 15);
+        g.lineStyle(2, 0xffffff, 1); 
+        g.strokeCircle(20, 20, 15);
+        g.generateTexture(key, 40, 40); 
+        g.destroy();
       }
-      const sprite = scene.add.sprite(pd.x||200, pd.y||200, key);
-      const short = (pd.id||'n').slice(0,6);
-      const nameText = scene.add.text(sprite.x, sprite.y-28, short, { fontSize:'12px', color: local ? '#bfefff' : '#ffd6a6', backgroundColor:'#000', padding:{x:4,y:2}}).setOrigin(0.5);
+      const sprite = scene.add.sprite(pd.x || 200, pd.y || 200, key);
+      const short = (pd.id || 'n').slice(0, 6);
+      const nameText = scene.add.text(sprite.x, sprite.y - 28, short, { 
+        fontSize: '12px', 
+        color: local ? '#bfefff' : '#ffd6a6', 
+        backgroundColor: '#000', 
+        padding: {x: 4, y: 2}
+      }).setOrigin(0.5);
+      
       return { sprite, nameText, data: pd };
     }
 
     function updateOtherPlayer(scene, pd){
       const p = otherPlayers[pd.id];
       if (!p) return;
-      scene.tweens.add({ targets:[p.sprite,p.nameText], x:pd.x, y:pd.y, duration:60, ease:'Linear' });
-      p.nameText.y = pd.y-28;
+      scene.tweens.add({ 
+        targets: [p.sprite], 
+        x: pd.x, 
+        y: pd.y, 
+        duration: 50, 
+        ease: 'Linear' 
+      });
+      p.nameText.x = pd.x;
+      p.nameText.y = pd.y - 28;
     }
 
-    function getDirection(dx,dy){
+    function getDirection(dx, dy){
       if (dy < 0 && dx === 0) return 'up';
       if (dy > 0 && dx === 0) return 'down';
       if (dx < 0 && dy === 0) return 'left';
@@ -464,8 +521,8 @@
     }
 
     function updateGameTimeUI(seconds){
-      const mins = Math.floor(seconds/60).toString().padStart(2,'0');
-      const secs = (seconds%60).toString().padStart(2,'0');
+      const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const secs = (seconds % 60).toString().padStart(2, '0');
       gameTimeEl.textContent = `${mins}:${secs}`;
     }
 
@@ -476,7 +533,6 @@
       `;
     }
 
-    // expose small helper for debug (optional)
     window._spatium = { socket };
 
   })();
