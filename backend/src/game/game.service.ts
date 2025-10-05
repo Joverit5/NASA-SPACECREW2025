@@ -25,8 +25,18 @@ export class GameService {
   updatePlayer(id: string, data: PlayerMovePayload) {
     const player = this.state.players[id];
     if (!player) return;
-    player.x += data.dx;
-    player.y += data.dy;
+    
+    let { dx, dy } = data;
+    
+    // Normalizar movimiento diagonal
+    if (dx !== 0 && dy !== 0) {
+      const magnitude = Math.sqrt(dx * dx + dy * dy);
+      dx = dx / magnitude;
+      dy = dy / magnitude;
+    }
+    
+    player.x += dx;
+    player.y += dy;
     player.direction = data.direction;
   }
 
