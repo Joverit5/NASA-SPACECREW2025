@@ -298,8 +298,8 @@ We would like to express our gratitude to:
 [issues-shield]: https://img.shields.io/github/issues/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
 [issues-url]: https://github.com/your-username/SPATIUM/issues
 
-[license-shield]: https://img.shields.io/github/license/Joverit5/SPATIUM.svg?style=for-the-badge
-[license-url]: https://github.com/your-username/SPATIUM/blob/master/LICENSE.txt
+[license-shield]: https://img.shields.io/github/license/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
+[license-url]: https://github.com/Joverit5/SPATIUM/main/license.txt
 
 [product-screenshot]: images/screenshot.png
 
