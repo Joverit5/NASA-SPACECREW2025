@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { togglePlayerReady } from "@/lib/room-store"
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export async function POST(request: NextRequest, context: any) {
+export async function POST(request: NextRequest) {
   try {
-    const roomId = context?.params?.roomId
+    // Extraer el roomId desde la URL
+    const url = new URL(request.url)
+    const pathParts = url.pathname.split("/")
+    const roomId = pathParts[pathParts.indexOf("rooms") + 1] // obtiene el valor dinámico
+
     const { playerId } = await request.json()
 
     const updatedRoom = await togglePlayerReady(roomId, playerId)
