@@ -51,7 +51,7 @@ async function readData(): Promise<RoomData> {
   return getGlobalStore()
 }
 
-async function writeData(data: RoomData): Promise<void> {
+async function writeData(_data: RoomData): Promise<void> {
   // No hacer nada, los cambios ya están en globalThis.roomStore
 }
 
