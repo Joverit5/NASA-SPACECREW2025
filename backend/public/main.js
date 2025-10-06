@@ -740,7 +740,15 @@ function preloadScene() {
 }
 
 function createScene() {
-
+  function clientToCanvas(scene, clientX, clientY) {
+    const rect = scene.sys.canvas.getBoundingClientRect();
+    // rect.width = CSS display width, scene.sys.canvas.width = internal canvas width
+    const scaleX = scene.sys.canvas.width / rect.width;
+    const scaleY = scene.sys.canvas.height / rect.height;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    return { x, y };
+  }
   function getCanvasRelativePointer(pointer, scene) {
   const rect = scene.sys.canvas.getBoundingClientRect();
 
@@ -1025,20 +1033,25 @@ this.scale.on("resize", () => {
           appendLog("in-game drag start: " + a.type);
           // create a follow sprite to show a floating preview of the dragged area
           try {
-            if (scene._dragFollowSprite) scene._dragFollowSprite.destroy();
             const key = `area_icon_${a.type}`;
+            let canvasPos;
+            if (pointer && pointer.event && typeof pointer.event.clientX === "number") {
+              canvasPos = clientToCanvas(scene, pointer.event.clientX, pointer.event.clientY);
+            } else {
+              // pointer.x/y ya podrían ser internal canvas coords (Phaser)
+              canvasPos = { x: pointer.x || 0, y: pointer.y || 0 };
+            }
             const follow = scene.add
-              .image(pointer.x, pointer.y, key)
-              .setOrigin(0.5) 
+              .image(canvasPos.x, canvasPos.y, key)
+              .setOrigin(0.5)
               .setDisplaySize(36, 36)
               .setDepth(6000)
               .setAlpha(0.95);
-
-            follow.setScrollFactor(0);
-            scene._dragFollowSprite = follow;
-          } catch (e) {
-            // ignore
-          }
+              follow.setScrollFactor(0); 
+              scene._dragFollowSprite = follow;
+            } catch (e) {
+              
+            }
         });
 
         tw.add(img);
@@ -1213,46 +1226,52 @@ this.scale.on("resize", () => {
   // pointermove -> preview (apply origin offset)
   this.input.on("pointermove", (pointer) => {
     if (isIsometricMode || !currentDraggedArea) return;
-
-    // Convertir coordenadas globales del mouse a coordenadas relativas al canvas
     const rect = scene.sys.canvas.getBoundingClientRect();
-    const relX = pointer.x - rect.left;
-    const relY = pointer.y - rect.top;
+    let canvasX, canvasY;
+    if (pointer && pointer.event && typeof pointer.event.clientX === "number") {
+          const p = clientToCanvas(scene, pointer.event.clientX, pointer.event.clientY);
+    canvasX = p.x; canvasY = p.y;
+  } else {
 
-    const worldPoint = this.cameras.main.getWorldPoint(relX, relY);
+    canvasX = pointer.x;
+    canvasY = pointer.y;
+  }
+    const worldPoint = this.cameras.main.getWorldPoint(canvasX, canvasY);
     const localX = worldPoint.x - GRID_ORIGIN_X;
     const localY = worldPoint.y - GRID_ORIGIN_Y;
-
     const tx = Math.floor(localX / TILE_W);
     const ty = Math.floor(localY / TILE_H);
 
-    updateGhost(tx, ty);
+  updateGhost(tx, ty);
 
-    // Actualizar posición del sprite que sigue el puntero
-    try {
-      if (scene._dragFollowSprite) {
-        const world = scene.cameras.main.getWorldPoint(relX, relY);
-        scene._dragFollowSprite.x = world.x;
-        scene._dragFollowSprite.y = world.y;
+      try {
+        if (scene._dragFollowSprite) {
+          scene._dragFollowSprite.x = canvasX;
+          scene._dragFollowSprite.y = canvasY;
+        }
+      } catch (e) {
+        // ignore
       }
-    } catch (e) {
-      // ignore
-    }
-  });
+    });
 
   // Expose small helpers so DOM-based drag can forward coordinates into Phaser
   window._phaserPreviewPointerMove = (clientX, clientY) => {
     try {
-      // translate client coords to canvas coords
-      const rect = scene.sys.canvas.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
-      const worldPoint = scene.cameras.main.getWorldPoint(x, y);
+      const canvasPos = clientToCanvas(scene, clientX, clientY);
+
+      // actualizar ghost: necesitamos worldPoint
+      const worldPoint = scene.cameras.main.getWorldPoint(canvasPos.x, canvasPos.y);
       const localX = worldPoint.x - GRID_ORIGIN_X;
       const localY = worldPoint.y - GRID_ORIGIN_Y;
-      const tx = Math.floor(localX / TILE_W),
-        ty = Math.floor(localY / TILE_H);
+      const tx = Math.floor(localX / TILE_W);
+      const ty = Math.floor(localY / TILE_H);
       updateGhost(tx, ty);
+
+      // actualizar follow sprite (canvas coords)
+      if (scene._dragFollowSprite) {
+        scene._dragFollowSprite.x = canvasPos.x;
+        scene._dragFollowSprite.y = canvasPos.y;
+      }
     } catch (e) {
       // ignore
     }
@@ -1261,18 +1280,16 @@ this.scale.on("resize", () => {
   // pointerup -> finalize placement (from toolbar drag)
   this.input.on("pointerup", phaserPointerUp);
 
-  // Expose a function callable from DOM pointerup to finalize placement
   window._phaserPointerUp = (clientX, clientY) => {
     try {
-      const rect = scene.sys.canvas.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
-      const pointer = { x, y };
+      const canvasPos = clientToCanvas(scene, clientX, clientY);
+      const pointer = { x: canvasPos.x, y: canvasPos.y, event: { clientX, clientY } };
       phaserPointerUp(pointer);
     } catch (e) {
       // ignore
     }
   };
+
 
   function phaserPointerUp(pointer) {
     if (isIsometricMode || !currentDraggedArea) return;
@@ -1369,6 +1386,17 @@ this.scale.on("resize", () => {
       // ignore
     }
   }
+  if (!scene.budget) {
+    scene.budget = new BudgetSystem(scene);
+    window.budgetSystem = scene.budget;
+    appendLog("[Budget] Sistema de presupuesto inicializado correctamente (post-load).");
+  }
+
+  window.currentBudgetSystem = scene.budget; 
+
+
+
+
 }
 
 function updateScene() {

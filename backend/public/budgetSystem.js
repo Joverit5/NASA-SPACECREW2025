@@ -8,19 +8,19 @@ class BudgetSystem {
     this.lowBudgetThreshold = 20000
     
     this.areaCosts = {
-      Dock: { base: 20000, importance: 1.5 },
-      Control: { base: 15000, importance: 1.4 },
-      Energy: { base: 14000, importance: 1.4 },
-      Medbay: { base: 10000, importance: 1.2 },
-      Lab: { base: 9500, importance: 1.1 },
-      Biodome: { base: 11000, importance: 1.3 },
-      Oxygen: { base: 8500, importance: 1.1 },
-      Kitchen: { base: 8000, importance: 1.0 },
-      Maintenance: { base: 7000, importance: 1.0 },
-      Psychology: { base: 6500, importance: 0.9 },
-      Sleep: { base: 6000, importance: 0.8 },
-      Storage: { base: 4500, importance: 0.7 },
-      Observatory: { base: 12000, importance: 1.3 },
+      Dock: { base: 50000, importance: 1.5 },
+      Control: { base: 45000, importance: 1.4 },
+      Energy: { base: 44000, importance: 1.4 },
+      Medbay: { base: 40000, importance: 1.2 },
+      Lab: { base: 35000, importance: 1.1 },
+      Biodome: { base: 41000, importance: 1.3 },
+      Oxygen: { base: 38500, importance: 1.1 },
+      Kitchen: { base: 38000, importance: 1.0 },
+      Maintenance: { base: 37000, importance: 1.0 },
+      Psychology: { base: 36500, importance: 0.9 },
+      Sleep: { base: 36000, importance: 0.8 },
+      Storage: { base: 34500, importance: 0.7 },
+      Observatory: { base: 52000, importance: 1.3 },
     }
 
     this.budgetDisplay = null
@@ -319,14 +319,25 @@ class BudgetSystem {
     }
   }
 
-  // Método para ocultar el presupuesto al iniciar simulación
   hide() {
     if (this.budgetContainer) {
       this.budgetContainer.setVisible(false);
     }
   }
+  fadeOut() {
+    if (!this.budgetContainer) return;
+    
+    this.scene.tweens.add({
+      targets: this.budgetContainer,
+      alpha: 0,
+      duration: 600,
+      ease: 'Power2',
+      onComplete: () => {
+        this.budgetContainer.setVisible(false);
+      }
+    });
+  }
 
-  // Método para mostrar el presupuesto
   show() {
     if (this.budgetContainer) {
       this.budgetContainer.setVisible(true);
