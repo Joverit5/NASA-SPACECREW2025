@@ -20,7 +20,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/Joverit5/NASA-SPACECREW2025">
+  <a href="https://github.com/Joverit5/NASA-SPATIUM">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -29,14 +29,14 @@
   <p align="center">
     A multiplayer real-time strategy game where players cooperate to manage resources, overcome random events, and build a thriving space colony. Players can create or join game rooms, interact with resources, and experience real-time synchronization of game events.
     <br />
-    <a href="https://github.com/Joverit5/NASA-SPACECREW2025.git"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/Joverit5/NASA-SPATIUM.git"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://spatium-demo.vercel.app">View Demo</a>
+    <a href="https://spatium-ruby.vercel.app/">View Demo</a>  
     ·
-   <a href="https://github.com/Joverit5/NASA-SPACECREW2025/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+   <a href="https://github.com/Joverit5/NASA-SPATIUM/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     ·
-   <a href="https://github.com/Joverit5/NASA-SPACECREW2025/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+   <a href="https://github.com/Joverit5/NASA-SPATIUM/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
 
   </p>
 </div>
@@ -75,7 +75,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://spatium-demo.vercel.app)
+[![Product Name Screen Shot][product-screenshot](https://spatium-ruby.vercel.app/)
 
 SPATIUM is a multiplayer real-time strategy game where players cooperate to manage resources, overcome random events, and build a thriving space colony. The game features an in-game currency system and aims to provide a challenging and engaging cooperative experience.
 
@@ -96,6 +96,11 @@ SPATIUM is a multiplayer real-time strategy game where players cooperate to mana
 * [![PostgreSQL][PostgreSQL]][PostgreSQL-url]
 * [![Redis][Redis]][Redis-url]
 
+<!-- Project Presentation -->
+## Project Presentation
+
+* [![YouTube][youtube-shield]][youtube-url]
+  
 <!-- KEY FEATURES -->
 ## Key Features
 
@@ -235,9 +240,10 @@ Don't forget to give the project a star! Thanks again!
 
 ### Top contributors:
 
-<a href="https://github.com/your-username/SPATIUM/graphs/contributors">
-  <img src="https://github.com/Joverit5/NASA-SPACECREW2025.git" alt="contrib.rocks image" />
+<a href="https://github.com/Joverit5/NASA-SPATIUM/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Joverit5/NASA-SPATIUM" alt="contrib.rocks image" />
 </a>
+
 
 
 <!-- LICENSE -->
@@ -258,7 +264,9 @@ This project is licensed under the MIT License. See `LICENSE.txt` for more infor
 - Eduardo Negrin - enegrin@utb.edu.co
 - Isabella Arrieta - arrietai@utb.edu.co
 
-Project Link: [https://github.com/Joverit5/NASA-SPACECREW2025.git](https://github.com/Joverit5/NASA-SPACECREW2025.git)
+Project Link: [https://spatium-ruby.vercel.app/](https://spatium-ruby.vercel.app/)
+
+Youtube Link: [https://www.youtube.com/watch?v=mjrdVayyf58](https://www.youtube.com/watch?v=mjrdVayyf58)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -278,19 +286,19 @@ We would like to express our gratitude to:
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/your-username/SPATIUM.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
 [contributors-url]: https://github.com/your-username/SPATIUM/graphs/contributors
 
-[forks-shield]: https://img.shields.io/github/forks/your-username/SPATIUM.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
 [forks-url]: https://github.com/your-username/SPATIUM/network/members
 
-[stars-shield]: https://img.shields.io/github/stars/your-username/SPATIUM.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
 [stars-url]: https://github.com/your-username/SPATIUM/stargazers
 
-[issues-shield]: https://img.shields.io/github/issues/your-username/SPATIUM.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
 [issues-url]: https://github.com/your-username/SPATIUM/issues
 
-[license-shield]: https://img.shields.io/github/license/your-username/SPATIUM.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/Joverit5/SPATIUM.svg?style=for-the-badge
 [license-url]: https://github.com/your-username/SPATIUM/blob/master/LICENSE.txt
 
 [product-screenshot]: images/screenshot.png
@@ -324,3 +332,6 @@ We would like to express our gratitude to:
 
 [Redis]: https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white
 [Redis-url]: https://redis.io/
+
+[youtube-shield]: https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube
+[youtube-url]: https://youtu.be/4QGIdWIk018
