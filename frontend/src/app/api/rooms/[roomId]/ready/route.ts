@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server"
 import { togglePlayerReady } from "@/lib/room-store"
 
-export async function POST(request: Request, { params }: { params: { roomId: string } }) {
+export async function POST(request: Request) {
   try {
-    const roomId = params.roomId
+    // Extraer el roomId directamente de la URL
+    const url = new URL(request.url)
+    const parts = url.pathname.split("/")
+    const roomId = parts[parts.indexOf("rooms") + 1]
+
     const { playerId } = await request.json()
 
     if (!playerId) {
       return NextResponse.json({ error: "Player ID is required" }, { status: 400 })
     }
 
-    const room = togglePlayerReady(roomId, playerId)
+    const room = await togglePlayerReady(roomId, playerId)
 
     if (!room) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 })
