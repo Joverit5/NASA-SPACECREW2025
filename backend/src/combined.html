@@ -1,1380 +1,697 @@
 <!DOCTYPE html>
 <html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NASA SPATIUM – Multiplayer + Chat</title>
 
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NASA SPATIUM – Multiplayer + Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="/events.js"></script>
+    <script src="/mission-bank.js"></script>
+    <script src="/missions.js"></script>
+    <script src="/missionSystem.js"></script> 
+    <script src="/budgetSystem.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-
-  <style>
-    :root {
-      --bg: #0a0a14;
-      --panel: #0f2130;
-      --muted: #9aa7b2;
-      --accent: #66ccff;
-      --sidebar-width: 380px;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      height: 100%;
-      font-family: "Segoe UI", Roboto, system-ui, sans-serif;
-      background: var(--bg);
-      color: #e6eef6;
-      -webkit-font-smoothing: antialiased;
-      overflow: hidden;
-    }
-
-    .main-container {
-      display: flex;
-      height: 100vh;
-    }
-
-    /* SIDEBAR IZQUIERDO */
-    #sidebar {
-      width: var(--sidebar-width);
-      background: linear-gradient(180deg, #0f2433, #07121a);
-      border-right: 2px solid #1a2332;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      z-index: 100;
-    }
-
-    .sidebar-section {
-      padding: 12px;
-      border-bottom: 1px solid #1a2332;
-    }
-
-    .section-title {
-      font-size: 16px;
-      font-weight: bold;
-      color: var(--accent);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* Tiempo de juego */
-    #game-time-section {
-      background: rgba(0, 0, 0, 0.3);
-    }
-
-    #gameTime {
-      font-size: 32px;
-      font-weight: bold;
-      color: var(--accent);
-      text-align: center;
-      text-shadow: 0 0 10px rgba(102, 204, 255, 0.5);
-    }
-
-    /* Stats del jugador */
-    #stats-section {
-      background: rgba(0, 0, 0, 0.2);
-    }
-
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 0;
-      font-size: 13px;
-    }
-
-    .stat-label {
-      color: var(--muted);
-    }
-
-    .stat-value {
-      color: #fff;
-      font-weight: bold;
-    }
-
-    /* Misiones */
-    #missions-section {
-      flex: 1;
-      min-height: 200px;
-      overflow-y: auto;
-    }
-
-    .mission-card {
-      background: #1a1f3a;
-      border: 2px solid #666;
-      border-radius: 6px;
-      padding: 8px;
-      margin-bottom: 8px;
-      font-size: 12px;
-    }
-
-    .mission-card.active {
-      background: #2a2a00;
-      border-color: #ffd93d;
-    }
-
-    .mission-card.completed {
-      background: #1a3a1a;
-      border-color: #4CAF50;
-    }
-
-    .mission-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 4px;
-    }
-
-    .mission-name {
-      font-weight: bold;
-      font-size: 13px;
-    }
-
-    .mission-status {
-      font-size: 10px;
-      opacity: 0.8;
-    }
-
-    .mission-description {
-      color: var(--muted);
-      margin-bottom: 4px;
-      font-size: 11px;
-    }
-
-    .mission-area {
-      color: var(--accent);
-      font-size: 11px;
-      margin-bottom: 4px;
-    }
-
-    .mission-progress-bar {
-      background: #0b0b0b;
-      border-radius: 3px;
-      height: 4px;
-      overflow: hidden;
-      margin-bottom: 2px;
-    }
-
-    .mission-progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #666, #888);
-      transition: width 0.3s;
-    }
-
-    .mission-card.active .mission-progress-fill {
-      background: linear-gradient(90deg, #ffd93d, #ffed4e);
-    }
-
-    .mission-card.completed .mission-progress-fill {
-      background: linear-gradient(90deg, #4CAF50, #66bb6a);
-    }
-
-    .mission-progress-text {
-      font-size: 10px;
-      text-align: right;
-      color: var(--muted);
-    }
-
-    /* Eventos */
-    #events-section {
-      max-height: 250px;
-      overflow-y: auto;
-    }
-
-    .event-card {
-      background: rgba(255, 255, 255, 0.05);
-      border-left: 3px solid var(--accent);
-      padding: 8px;
-      margin-bottom: 6px;
-      border-radius: 4px;
-      font-size: 12px;
-    }
-
-    .event-header {
-      font-weight: bold;
-      margin-bottom: 4px;
-    }
-
-    .event-description {
-      color: var(--muted);
-      font-size: 11px;
-      margin-bottom: 4px;
-    }
-
-    .event-timer {
-      color: #ffd93d;
-      font-size: 11px;
-    }
-
-    .event-resolve-btn {
-      margin-top: 4px;
-      background: var(--accent);
-      border: none;
-      padding: 4px 8px;
-      border-radius: 4px;
-      color: #000;
-      font-size: 11px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    /* Log de eventos */
-    #event-log-section {
-      max-height: 150px;
-      overflow-y: auto;
-      font-size: 11px;
-    }
-
-    .log-item {
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      color: var(--muted);
-    }
-
-    /* ÁREA DE JUEGO */
-    #game-area {
-      flex: 1;
-      position: relative;
-      background: #000;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #game-container {
-      flex: 1;
-      position: relative;
-    }
-
-    /* Botón start */
-    #start-sim-btn {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 20px 40px;
-      background: linear-gradient(135deg, #00d9ff 0%, #0099cc 100%);
-      border: none;
-      border-radius: 12px;
-      color: #000;
-      font-size: 20px;
-      font-weight: bold;
-      cursor: pointer;
-      z-index: 1000;
-      box-shadow: 0 0 30px rgba(0, 217, 255, 0.6);
-      transition: all 0.3s ease;
-    }
-
-    #start-sim-btn:hover {
-      transform: translate(-50%, -50%) scale(1.05);
-      box-shadow: 0 0 40px rgba(0, 217, 255, 0.8);
-    }
-
-    /* Chat en la parte inferior del área de juego */
-    #chat-panel {
-      height: 200px;
-      background: linear-gradient(180deg, #0f2433, #07121a);
-      border-top: 2px solid #1a2332;
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-    }
-
-    #chat-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: bold;
-      color: var(--accent);
-      margin-bottom: 8px;
-      font-size: 14px;
-    }
-
-    #status {
-      font-size: 11px;
-      color: var(--muted);
-      margin-left: auto;
-    }
-
-    #messages {
-      flex: 1;
-      background: rgba(10, 16, 24, 0.6);
-      border-radius: 6px;
-      padding: 8px;
-      overflow-y: auto;
-      font-size: 12px;
-    }
-
-    .message {
-      margin: 4px 0;
-      padding: 6px;
-      border-radius: 4px;
-      word-break: break-word;
-    }
-
-    .you {
-      background: #052f2a;
-      color: #bfffe6;
-    }
-
-    .other {
-      background: #372a10;
-      color: #ffd97a;
-    }
-
-    .system {
-      text-align: center;
-      color: var(--muted);
-      font-style: italic;
-      background: transparent;
-      padding: 4px;
-    }
-
-    #input-container {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-    }
-
-    #chat-input {
-      flex: 1;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #223;
-      background: #07121a;
-      color: #eaf6ff;
-      font-size: 12px;
-    }
-
-    #chat-send {
-      background: var(--accent);
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      color: #012;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    /* Scrollbars */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.2);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--accent);
-      border-radius: 3px;
-    }
-
-    /* Responsive */
-    @media (max-width: 1200px) {
+    <style>
       :root {
-        --sidebar-width: 320px;
-      }
-    }
-  </style>
-</head>
-
-<body>
-  <div class="main-container">
-    <!-- SIDEBAR IZQUIERDO -->
-    <aside id="sidebar">
-      <!-- Tiempo de juego -->
-      <div id="game-time-section" class="sidebar-section">
-        <div class="section-title">⏱️ Tiempo de Juego</div>
-        <div id="gameTime">00:00</div>
-      </div>
-
-      <!-- Stats del jugador -->
-      <div id="stats-section" class="sidebar-section">
-        <div class="section-title">📊 Estado</div>
-        <div id="playerStats">
-          <div class="stat-row">
-            <span class="stat-label">Vida</span>
-            <span class="stat-value" id="stat-health">100%</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Oxígeno</span>
-            <span class="stat-value" id="stat-oxygen">100%</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Hambre</span>
-            <span class="stat-value" id="stat-hunger">100%</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-label">Energía</span>
-            <span class="stat-value" id="stat-energy">100%</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Misiones -->
-      <div id="missions-section" class="sidebar-section">
-        <div class="section-title">📋 Misiones <span id="mission-counter"
-            style="font-size:12px;opacity:0.7;">(0/0)</span></div>
-        <div id="missions-list">
-          <div style="text-align:center; color:#9aa7b2; font-size:12px; padding:20px;">
-            Sin misiones asignadas
-          </div>
-        </div>
-      </div>
-
-      <!-- Eventos activos -->
-      <div id="events-section" class="sidebar-section">
-        <div class="section-title">🔔 Eventos Activos</div>
-        <div id="events-list">
-          <div style="text-align:center; color:#9aa7b2; font-size:12px; padding:10px;">
-            Sin eventos
-          </div>
-        </div>
-      </div>
-
-      <!-- Log de eventos -->
-      <div id="event-log-section" class="sidebar-section">
-        <div class="section-title">📜 Registro</div>
-        <div id="eventList"></div>
-      </div>
-    </aside>
-
-    <!-- ÁREA PRINCIPAL DE JUEGO -->
-    <div id="game-area">
-      <div id="game-container">
-        <button id="start-sim-btn">🚀 Iniciar Simulación</button>
-      </div>
-
-      <!-- Chat en la parte inferior -->
-      <div id="chat-panel">
-        <div id="chat-header">
-          Chat Espacial
-          <span id="status">Conectando...</span>
-        </div>
-        <div id="messages"></div>
-        <div id="input-container">
-          <input id="chat-input" placeholder="Escribe un mensaje..." disabled />
-          <button id="chat-send" disabled>Enviar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-      const SERVER_URL = isLocal ? (location.origin) : location.origin;
-      const socket = io(SERVER_URL);
-
-
-
-      const sessionId = "sala-demo";
-
-      const statusDiv = document.getElementById("status");
-      const messagesDiv = document.getElementById("messages");
-      const inputEl = document.getElementById("chat-input");
-      const sendBtn = document.getElementById("chat-send");
-
-      const gameTimeEl = document.getElementById("gameTime");
-      const eventList = document.getElementById("eventList");
-
-      let playerId = null;
-      let playerName = null;
-      let isConnected = false;
-      let isJoining = false;
-      let simulationStarted = false;
-      let playerAlive = true;
-      let currentMission = null;
-      const missionOwnership = {};
-      let warningTimeout = null;
-
-      const placedAreas = new Set();
-      const playerRoles = ['crew_medic'];
-
-      function promptForName() {
-        let name = prompt("Tu nombre (1-20 caracteres):");
-        if (!name) return promptForName();
-        name = name.trim();
-        if (name.length === 0 || name.length > 20) return promptForName();
-        return name;
+        --bg: #0a0a14;
+        --panel: #0f2130;
+        --muted: #9aa7b2;
+        --accent: #66ccff;
+        --sidebar-width: 380px;
       }
 
-      function setStatus(text, cls = '') {
-        statusDiv.textContent = text;
-        statusDiv.className = cls;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
 
-      function addSystem(text) {
-        const d = document.createElement('div');
-        d.className = 'message system';
-        d.textContent = text;
-        messagesDiv.appendChild(d);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      html,
+      body {
+        height: 100%;
+        font-family: "Segoe UI", Roboto, system-ui, sans-serif;
+        background: var(--bg);
+        color: #e6eef6;
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
       }
 
-      function addMessage(msg) {
-        const d = document.createElement('div');
-        d.className = 'message ' + (msg.playerId === playerId ? 'you' : 'other');
-        d.textContent = (msg.playerId === playerId ? '[Tu] ' : `[${msg.playerName}] `) + msg.text;
-        messagesDiv.appendChild(d);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      .main-container {
+        display: flex;
+        height: 100vh;
       }
 
-      function showError(text) {
-        const d = document.createElement('div');
-        d.className = 'message system';
-        d.style.color = '#ff6b6b';
-        d.textContent = '❌ ' + text;
-        messagesDiv.appendChild(d);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      #sidebar {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, #0f2433, #07121a);
+        border-right: 2px solid #1a2332;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        z-index: 100;
       }
 
-      function attemptJoin(name) {
-        if (isJoining) return;
-        isJoining = true;
-        setStatus(`Conectando como ${name}...`);
-        socket.emit('join_session', { sessionId, player: { name } });
+      .sidebar-section {
+        padding: 12px;
+        border-bottom: 1px solid #1a2332;
       }
 
-      socket.on('connect', () => {
-        console.log('socket connected', socket.id);
-        playerName = promptForName();
-        attemptJoin(playerName);
-      });
-
-      socket.on('join_success', (data) => {
-        playerId = data.playerId;
-        isConnected = true;
-        isJoining = false;
-        setStatus(`Conectado: ${data.playerName}`, 'connected');
-        inputEl.disabled = false;
-        sendBtn.disabled = false;
-        addSystem(`Te has unido a ${data.sessionId} como ${data.playerName}`);
-      });
-
-      socket.on('join_rejected', (data) => {
-        isJoining = false;
-        showError(data.message);
-        setStatus(data.message, 'error');
-        if (data.reason === 'room_full') {
-          inputEl.disabled = true;
-          sendBtn.disabled = true;
-          addSystem("Sala llena. Intenta mas tarde.");
-          setTimeout(() => socket.disconnect(), 400);
-          return;
-        }
-        if (data.reason === 'name_taken') {
-          setTimeout(() => {
-            const newName = promptForName();
-            attemptJoin(newName);
-          }, 300);
-        }
-      });
-
-      socket.on('chat_history', (messages) => {
-        if (!messages || !messages.length) return;
-        addSystem(`--- Historial (${messages.length}) ---`);
-        messages.forEach(m => addMessage(m));
-      });
-
-      socket.on('chat_message_broadcast', (msg) => {
-        addMessage(msg);
-      });
-
-      socket.on('player_joined', (data) => {
-        addSystem(`${data.name} se ha unido a la sala`);
-      });
-
-      socket.on('player_left', (data) => {
-        addSystem(`${data.name} ha salido de la sala`);
-      });
-
-      socket.on('chat_error', (data) => {
-        showError(data.message || "Error en chat");
-        setStatus(`Error: ${data.message}`, 'error');
-        inputEl.disabled = true;
-        sendBtn.disabled = true;
-        isConnected = false;
-      });
-
-      socket.on('disconnect', () => {
-        setStatus('Desconectado', 'error');
-        inputEl.disabled = true;
-        sendBtn.disabled = true;
-        addSystem('Conexion perdida con el servidor');
-      });
-
-      socket.on('connect_error', (err) => {
-        setStatus('Error de conexion', 'error');
-        showError('No se pudo conectar al servidor');
-      });
-
-      sendBtn.addEventListener('click', () => {
-        sendChat();
-      });
-      inputEl.addEventListener('keypress', (ev) => {
-        if (ev.key === 'Enter') {
-          ev.preventDefault();
-          sendChat();
-        }
-      });
-
-      function sendChat() {
-        if (!isConnected || !playerId) return;
-        const text = inputEl.value.trim();
-        if (!text) return;
-        socket.emit('chat_message', { sessionId, playerId, text });
-        inputEl.value = '';
+      .section-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: var(--accent);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
 
-      function addEventToLog(message) {
-        const item = document.createElement('div');
-        item.className = 'log-item';
-        const t = new Date().toLocaleTimeString();
-        item.innerHTML = `<span style="color:#666;">[${t}]</span> ${message}`;
-        eventList.insertBefore(item, eventList.firstChild);
-        while (eventList.children.length > 15) eventList.removeChild(eventList.lastChild);
+      #game-time-section {
+        background: rgba(0, 0, 0, 0.3);
+      }
+      
+      #game {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      
+      #gameTime {
+        font-size: 32px;
+        font-weight: bold;
+        color: var(--accent);
+        text-align: center;
+        text-shadow: 0 0 10px rgba(102, 204, 255, 0.5);
       }
 
-      function showWarning(msg) {
-        const warningDiv = document.createElement('div');
-        warningDiv.textContent = msg;
-        warningDiv.style.cssText = `
+      #stats-section {
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        font-size: 13px;
+      }
+
+      .stat-label {
+        color: var(--muted);
+      }
+
+      .stat-value {
+        color: #fff;
+        font-weight: bold;
+      }
+
+      #missions-section {
+        flex: 1;
+        min-height: 200px;
+        overflow-y: auto;
+      }
+      
+      #game canvas {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain;
+        display: block;
+      }
+      
+      .mission-card {
+        background: #1a1f3a;
+        border: 2px solid #666;
+        border-radius: 6px;
+        padding: 8px;
+        margin-bottom: 8px;
+        font-size: 12px;
+      }
+
+      .mission-card.active {
+        background: #2a2a00;
+        border-color: #ffd93d;
+      }
+
+      .mission-card.completed {
+        background: #1a3a1a;
+        border-color: #4caf50;
+      }
+
+      .mission-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
+      .mission-name {
+        font-weight: bold;
+        font-size: 13px;
+      }
+
+      .mission-status {
+        font-size: 10px;
+        opacity: 0.8;
+      }
+
+      .mission-description {
+        color: var(--muted);
+        margin-bottom: 4px;
+        font-size: 11px;
+      }
+
+      .mission-area {
+        color: var(--accent);
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+
+      .mission-progress-bar {
+        background: #0b0b0b;
+        border-radius: 3px;
+        height: 4px;
+        overflow: hidden;
+        margin-bottom: 2px;
+      }
+
+      .mission-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #666, #888);
+        transition: width 0.3s;
+      }
+
+      .mission-card.active .mission-progress-fill {
+        background: linear-gradient(90deg, #ffd93d, #ffed4e);
+      }
+
+      .mission-card.completed .mission-progress-fill {
+        background: linear-gradient(90deg, #4caf50, #66bb6a);
+      }
+
+      .mission-progress-text {
+        font-size: 10px;
+        text-align: right;
+        color: var(--muted);
+      }
+
+      #events-section {
+        max-height: 250px;
+        overflow-y: auto;
+      }
+
+      .event-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-left: 3px solid var(--accent);
+        padding: 8px;
+        margin-bottom: 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        transition: all 0.3s;
+      }
+
+      .event-header {
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+
+      .event-description {
+        color: var(--muted);
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+
+      .event-timer {
+        color: #ffd93d;
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+
+      .event-resolve-btn {
+        margin-top: 4px;
+        background: var(--accent);
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: #000;
+        font-size: 11px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.2s;
+      }
+
+      .event-resolve-btn:hover {
+        background: #88ddff;
+        transform: scale(1.05);
+      }
+
+      #event-log-section {
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 11px;
+      }
+
+      .log-item {
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--muted);
+      }
+
+      #game-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #000;
+        overflow: hidden;
+      }
+      
+      #game-container {
+        flex: 1;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      #btn_start_sim_html {
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: rgba(255,0,0,0.9);
-        color: #fff;
-        padding: 15px 25px;
-        border-radius: 8px;
-        z-index: 10000;
+        padding: 20px 40px;
+        background: linear-gradient(135deg, #00d9ff 0%, #0099cc 100%);
+        border: none;
+        border-radius: 12px;
+        color: #000;
+        font-size: 20px;
         font-weight: bold;
-        box-shadow: 0 0 20px rgba(255,0,0,0.5);
-      `;
-        document.body.appendChild(warningDiv);
-
-        clearTimeout(warningTimeout);
-        warningTimeout = setTimeout(() => warningDiv.remove(), 2500);
+        cursor: pointer;
+        z-index: 1000;
+        box-shadow: 0 0 30px rgba(0, 217, 255, 0.6);
+        transition: all 0.3s ease;
       }
 
-      // ============================================
-      // PHASER
-      // ============================================
-      let myPlayerId = null;
-      let otherPlayers = {};
-      let currentGameTime = 0;
-
-      const gameContainer = document.getElementById('game-container');
-      const config = {
-        type: Phaser.AUTO,
-        width: gameContainer.clientWidth,
-        height: gameContainer.clientHeight,
-        parent: 'game-container',
-        backgroundColor: '#000000',
-        scene: { preload, create, update },
-        physics: { default: 'arcade', arcade: { debug: false } }
-      };
-      const game = new Phaser.Game(config);
-
-      let isometricView = false;
-
-      function cartesianToIso(x, y) {
-        return { x: (x - y) * 0.5, y: (x + y) * 0.25 };
+      #btn_start_sim_html:hover {
+        transform: translate(-50%, -50%) scale(1.05);
+        box-shadow: 0 0 40px rgba(0, 217, 255, 0.8);
       }
 
-      function isoToCartesian(isoX, isoY) {
-        return { x: isoY + isoX * 2, y: isoY - isoX * 2 };
+      #chat-panel {
+        height: 200px;
+        background: linear-gradient(180deg, #0f2433, #07121a);
+        border-top: 2px solid #1a2332;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
       }
 
-      function worldToScreen(worldX, worldY) {
-        if (!isometricView) return { x: worldX, y: worldY };
-        const { x, y } = cartesianToIso(worldX, worldY);
-        const offsetX = gameContainer.clientWidth / 2;
-        const offsetY = 150;
-        return { x: x + offsetX, y: y + offsetY };
+      #chat-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: bold;
+        color: var(--accent);
+        margin-bottom: 8px;
+        font-size: 14px;
       }
 
-      function toggleViewTransition(scene, toIsometric) {
-        const areas = scene.areas || [];
+      #status {
+        font-size: 11px;
+        color: var(--muted);
+        margin-left: auto;
+      }
 
-        areas.forEach(area => {
-          const wx = area.getData('worldX');
-          const wy = area.getData('worldY');
-          const newPos = toIsometric ? cartesianToIso(wx, wy) : { x: wx, y: wy };
-          const offsetX = toIsometric ? gameContainer.clientWidth / 2 : 0;
-          const offsetY = toIsometric ? 150 : 0;
+      #messages {
+        flex: 1;
+        background: rgba(10, 16, 24, 0.6);
+        border-radius: 6px;
+        padding: 8px;
+        overflow-y: auto;
+        font-size: 12px;
+      }
 
-          scene.tweens.add({
-            targets: area,
-            x: newPos.x + offsetX,
-            y: newPos.y + offsetY,
-            duration: 500,
-            ease: 'Sine.easeInOut',
-          });
+      .message {
+        margin: 4px 0;
+        padding: 6px;
+        border-radius: 4px;
+        word-break: break-word;
+      }
 
-          const label = area.getData('label');
-          if (label) {
-            scene.tweens.add({
-              targets: label,
-              x: newPos.x + offsetX,
-              y: newPos.y + offsetY,
-              duration: 500,
-              ease: 'Sine.easeInOut',
-            });
+      .you {
+        background: #052f2a;
+        color: #bfffe6;
+      }
+
+      .other {
+        background: #372a10;
+        color: #ffd97a;
+      }
+
+      .system {
+        text-align: center;
+        color: var(--muted);
+        font-style: italic;
+        background: transparent;
+        padding: 4px;
+      }
+
+      #input-container {
+        display: flex;
+        gap: 6px;
+        margin-top: 6px;
+      }
+
+      #chat-input {
+        flex: 1;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #223;
+        background: #07121a;
+        color: #eaf6ff;
+        font-size: 12px;
+      }
+
+      #chat-send {
+        background: var(--accent);
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        color: #012;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--accent);
+        border-radius: 3px;
+      }
+
+      @media (max-width: 1200px) {
+        :root {
+          --sidebar-width: 320px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-container">
+      <aside id="sidebar">
+        <div id="game-time-section" class="sidebar-section">
+          <div class="section-title">⏱️ Tiempo de Juego</div>
+          <div id="gameTime">00:00</div>
+        </div>
+        
+        <div id="missions-section" class="sidebar-section">
+          <div class="section-title">
+            📋 Misiones
+            <span id="mission-counter" style="font-size: 12px; opacity: 0.7">(0/0)</span>
+          </div>
+          <div id="missions-list">
+            <div style="text-align: center; color: #9aa7b2; font-size: 12px; padding: 20px;">
+              Sin misiones asignadas
+            </div>
+          </div>
+        </div>
+        
+        <div id="hud-controls">
+          <button id="btn_start_sim_html">🚀 Start Simulation</button>
+        </div>
+
+        <div id="events-section" class="sidebar-section">
+          <div class="section-title">🔔 Eventos Activos</div>
+          <div id="events-list">
+            <div style="text-align: center; color: #9aa7b2; font-size: 12px; padding: 10px;">
+              Sin eventos
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div id="game-area">
+        <div id="game-container" style="position: relative; width: 100%; height: 100%">
+          <div id="game" style="position: absolute; inset: 0; width: 100%; height: 100%"></div>
+        </div>
+        
+        <script src="/main.js"></script>
+        
+        <div id="chat-panel">
+          <div id="chat-header">
+            Chat Espacial
+            <span id="status">Conectando...</span>
+          </div>
+          <div id="messages"></div>
+          <div id="input-container">
+            <input id="chat-input" placeholder="Escribe un mensaje..." disabled />
+            <button id="chat-send" disabled>Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+        const SERVER_URL = isLocal ? location.origin : location.origin;
+        const socket = window.socket && typeof window.socket.emit === "function"
+          ? window.socket
+          : (window.socket = io(SERVER_URL));
+
+        const sessionId = "sala-demo";
+
+        const statusDiv = document.getElementById("status");
+        const messagesDiv = document.getElementById("messages");
+        const inputEl = document.getElementById("chat-input");
+        const sendBtn = document.getElementById("chat-send");
+        const gameTimeEl = document.getElementById("gameTime");
+
+        let playerId = null;
+        let playerName = null;
+        let isConnected = false;
+        let isJoining = false;
+        let gameStartTime = null;
+
+        function promptForName() {
+          let name = prompt("Tu nombre (1-20 caracteres):");
+          if (!name) return promptForName();
+          name = name.trim();
+          if (name.length === 0 || name.length > 20) return promptForName();
+          return name;
+        }
+
+        function setStatus(text, cls = "") {
+          statusDiv.textContent = text;
+          statusDiv.className = cls;
+        }
+
+        function addSystem(text) {
+          const d = document.createElement("div");
+          d.className = "message system";
+          d.textContent = text;
+          messagesDiv.appendChild(d);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addMessage(msg) {
+          const d = document.createElement("div");
+          d.className = "message " + (msg.playerId === playerId ? "you" : "other");
+          d.textContent = (msg.playerId === playerId ? "[Tu] " : `[${msg.playerName}] `) + msg.text;
+          messagesDiv.appendChild(d);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function showError(text) {
+          const d = document.createElement("div");
+          d.className = "message system";
+          d.style.color = "#ff6b6b";
+          d.textContent = "❌ " + text;
+          messagesDiv.appendChild(d);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function attemptJoin(name) {
+          if (isJoining) return;
+          isJoining = true;
+          setStatus(`Conectando como ${name}...`);
+          socket.emit("join_session", { sessionId, player: { name } });
+        }
+
+        function updateGameTime() {
+          if (!gameStartTime) return;
+          const elapsed = Date.now() - gameStartTime;
+          const minutes = Math.floor(elapsed / 60000);
+          const seconds = Math.floor((elapsed % 60000) / 1000);
+          gameTimeEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        socket.on("connect", () => {
+          console.log("socket connected", socket.id);
+          playerName = promptForName();
+          attemptJoin(playerName);
+        });
+
+        socket.on("join_success", (data) => {
+          playerId = data.playerId;
+          isConnected = true;
+          isJoining = false;
+          setStatus(`Conectado: ${data.playerName}`, "connected");
+          inputEl.disabled = false;
+          sendBtn.disabled = false;
+          addSystem(`Te has unido a ${data.sessionId} como ${data.playerName}`);
+        });
+
+        socket.on("join_rejected", (data) => {
+          isJoining = false;
+          showError(data.message);
+          setStatus(data.message, "error");
+          if (data.reason === "room_full") {
+            inputEl.disabled = true;
+            sendBtn.disabled = true;
+            addSystem("Sala llena. Intenta mas tarde.");
+            setTimeout(() => socket.disconnect(), 400);
+            return;
+          }
+          if (data.reason === "name_taken") {
+            setTimeout(() => {
+              const newName = promptForName();
+              attemptJoin(newName);
+            }, 300);
           }
         });
 
-        if (scene.player) {
-          const wx = scene.player.data.worldX;
-          const wy = scene.player.data.worldY;
-          const p = worldToScreen(wx, wy);
-
-          scene.tweens.add({
-            targets: scene.player.sprite,
-            x: p.x,
-            y: p.y,
-            duration: 500,
-            ease: 'Sine.easeInOut',
-          });
-          scene.tweens.add({
-            targets: scene.player.nameText,
-            x: p.x,
-            y: p.y - 28,
-            duration: 500,
-            ease: 'Sine.easeInOut',
-          });
-        }
-
-        Object.values(otherPlayers).forEach(op => {
-          const wx = op.data.worldX;
-          const wy = op.data.worldY;
-          const p = worldToScreen(wx, wy);
-
-          scene.tweens.add({
-            targets: op.sprite,
-            x: p.x,
-            y: p.y,
-            duration: 500,
-            ease: 'Sine.easeInOut',
-          });
-          scene.tweens.add({
-            targets: op.nameText,
-            x: p.x,
-            y: p.y - 28,
-            duration: 500,
-            ease: 'Sine.easeInOut',
-          });
+        socket.on("chat_history", (messages) => {
+          if (!messages || !messages.length) return;
+          addSystem(`--- Historial (${messages.length}) ---`);
+          messages.forEach((m) => addMessage(m));
         });
-      }
 
-      const toggleBtn = document.getElementById('toggle-view-btn');
-      if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-          const scene = game.scene.scenes[0];
-          isometricView = !isometricView;
-          addEventToLog(isometricView ? 'Vista: Isométrica' : 'Vista: 2D');
-          toggleViewTransition(scene, isometricView);
+        socket.on("chat_message_broadcast", (msg) => {
+          addMessage(msg);
         });
-      }
 
+        socket.on("player_joined", (data) => {
+          addSystem(`${data.name} se ha unido a la sala`);
+        });
 
-      window.addEventListener('keydown', (e) => {
-        const chatInput = document.getElementById('chat-input');
-        if (document.activeElement === chatInput) {
-          e.stopImmediatePropagation();
-          if (e.code === 'Space') {
-            e.preventDefault();
-            chatInput.value += ' ';
+        socket.on("player_left", (data) => {
+          addSystem(`${data.name} ha salido de la sala`);
+        });
+
+        socket.on("chat_error", (data) => {
+          showError(data.message || "Error en chat");
+          setStatus(`Error: ${data.message}`, "error");
+          inputEl.disabled = true;
+          sendBtn.disabled = true;
+          isConnected = false;
+        });
+
+        socket.on("disconnect", () => {
+          setStatus("Desconectado", "error");
+          inputEl.disabled = true;
+          sendBtn.disabled = true;
+          addSystem("Conexion perdida con el servidor");
+        });
+
+        socket.on("connect_error", (err) => {
+          setStatus("Error de conexion", "error");
+          showError("No se pudo conectar al servidor");
+        });
+
+        sendBtn.addEventListener("click", () => {
+          sendChat();
+        });
+        
+        inputEl.addEventListener("keypress", (ev) => {
+          if (ev.key === "Enter") {
+            ev.preventDefault();
+            sendChat();
           }
+        });
+
+        function sendChat() {
+          if (!isConnected || !playerId) return;
+          const text = inputEl.value.trim();
+          if (!text) return;
+          socket.emit("chat_message", { sessionId, playerId, text });
+          inputEl.value = "";
         }
+
+        // Iniciar contador de tiempo cuando se inicia la simulación
+        const btnStart = document.getElementById("btn_start_sim_html");
+        if (btnStart) {
+          btnStart.addEventListener("click", () => {
+            gameStartTime = Date.now();
+            setInterval(updateGameTime, 1000);
+          });
+        }
+
+        window._spatium = { socket, playerId, sessionId };
       });
-
-      function preload() { }
-
-      function create() {
-        const scene = this;
-        loadMapGrid(this);
-
-
-        const graphics = this.add.graphics();
-        graphics.lineStyle(1, 0x16213e, 0.25);
-        for (let x = 0; x < 1200; x += 50) graphics.lineBetween(x, 0, x, 800);
-        for (let y = 0; y < 800; y += 50) graphics.lineBetween(0, y, 1200, y);
-
-        this.add.text(scene.scale.width / 2, 16, 'NASA SPATIUM - Multiplayer', {
-          fontSize: '22px',
-          color: '#66ccff',
-          fontFamily: 'Segoe UI'
-        }).setOrigin(0.5, 0);
-
-        scene.player = null;
-        scene.cursors = this.input.keyboard.createCursorKeys();
-        scene.keys = this.input.keyboard.addKeys({
-          SHIFT: Phaser.Input.Keyboard.KeyCodes.SHIFT
-        });
-
-        const chatInput = document.getElementById('chat-input');
-
-        chatInput.addEventListener('focus', () => {
-          scene.input.keyboard.enabled = false;
-        });
-
-        chatInput.addEventListener('blur', () => {
-          scene.input.keyboard.enabled = true;
-        });
-
-        socket.on('connect', () => {
-          myPlayerId = socket.id;
-          console.log('Game socket connected', myPlayerId);
-          addEventToLog('Conectado al servidor (juego)');
-        });
-
-        socket.on('state:update', (state) => {
-          currentGameTime = state.gameTime || 0;
-          updateGameTimeUI(currentGameTime);
-
-          const scene = game.scene.scenes[0];
-          const players = state.players || {};
-
-          if (!scene) return;
-
-          Object.values(players).forEach(pd => {
-            const screen = worldToScreen(pd.x || 200, pd.y || 200);
-
-            if (pd.id === myPlayerId) {
-              if (!scene.player) {
-                scene.player = createPlayer(scene, pd, true);
-              } else {
-                scene.player.data.worldX = pd.x;
-                scene.player.data.worldY = pd.y;
-                scene.tweens.add({
-                  targets: scene.player.sprite,
-                  x: screen.x,
-                  y: screen.y,
-                  duration: 50,
-                  ease: 'Linear'
-                });
-                scene.player.nameText.x = screen.x;
-                scene.player.nameText.y = screen.y - 28;
+    </script>
+    
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('btn_start_sim_html');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            try {
+              if (typeof startIsometricTransition === 'function') {
+                startIsometricTransition();
               }
-              updatePlayerStatsUI(pd);
-            } else {
-              if (!otherPlayers[pd.id]) {
-                otherPlayers[pd.id] = createPlayer(scene, pd, false);
-              } else {
-                const op = otherPlayers[pd.id];
-                op.data.worldX = pd.x;
-                op.data.worldY = pd.y;
-                const s = worldToScreen(pd.x || 200, pd.y || 200);
-                scene.tweens.add({
-                  targets: [op.sprite],
-                  x: s.x,
-                  y: s.y,
-                  duration: 50,
-                  ease: 'Linear'
-                });
-                op.nameText.x = s.x;
-                op.nameText.y = s.y - 28;
-              }
+            } catch(e) {
+              console.warn('startIsometricTransition not available yet', e);
             }
           });
-
-          Object.keys(otherPlayers).forEach(id => {
-            if (!players[id]) {
-              try {
-                otherPlayers[id].sprite.destroy();
-                otherPlayers[id].nameText.destroy();
-              } catch (e) { }
-              delete otherPlayers[id];
-            }
-          });
-        });
-
-        socket.on('game:event', (ev) => {
-          addEventToLog(ev.type || 'evento');
-          if (ev.type === 'storm_incoming') scene.cameras.main.shake(500, 0.006);
-        });
-
-        createTestAreas(scene);
-      }
-
-      async function loadMapGrid(scene) {
-        const response = await fetch("http://localhost:4000/assets/maps/map_grid.json");
-        const data = await response.json();
-        const { width, height, cells } = data;
-
-        const cellSize = 8; // cambia si tu mapa es más grande
-        const graphics = scene.add.graphics();
-        graphics.lineStyle(1, 0x333366, 0.5);
-
-        for (let y = 0; y < height; y++) {
-          for (let x = 0; x < width; x++) {
-            const filled = cells[y][x];
-            const color = filled ? 0x555555 : 0x222244;
-            graphics.fillStyle(color, filled ? 0.8 : 0.3);
-            graphics.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-          }
-        }
-
-        console.log("✅ Mapa cargado desde grid JSON");
-      }
-
-
-      function createTestAreas(scene) {
-        const testAreas = [
-          { type: 'Kitchen', x: 150, y: 150, width: 80, height: 80, color: 0xFFB347 },
-          { type: 'Sleep', x: 300, y: 150, width: 80, height: 80, color: 0x9B59FF },
-          { type: 'Energy', x: 450, y: 150, width: 80, height: 80, color: 0xF1C40F },
-          { type: 'Control', x: 150, y: 300, width: 80, height: 80, color: 0xE74C3C },
-          { type: 'Maintenance', x: 300, y: 300, width: 80, height: 80, color: 0x00CFCF },
-        ];
-
-        scene.areas = [];
-
-        testAreas.forEach(area => {
-          const { x, y, width, height, color, type } = area;
-
-          const rect = scene.add.rectangle(x, y, width, height, color, 0.6);
-          rect.setStrokeStyle(2, color);
-          rect.setInteractive({ useHandCursor: true });
-          rect.setData('worldX', x);
-          rect.setData('worldY', y);
-          rect.setData('width', width);
-          rect.setData('height', height);
-          rect.setData('areaType', type);
-
-          const label = scene.add.text(x, y, type, {
-            fontSize: '12px',
-            color: '#fff',
-            backgroundColor: '#000',
-            padding: { x: 4, y: 2 }
-          }).setOrigin(0.5);
-
-          rect.setData('label', label);
-
-          rect.on('pointerover', () => rect.setAlpha(0.8));
-          rect.on('pointerout', () => rect.setAlpha(0.6));
-
-          scene.areas.push(rect);
-          placedAreas.add(type);
-        });
-      }
-
-      function update() {
-        const scene = this;
-        if (!scene.player) return;
-        if (!playerAlive) return;
-
-        const speed = scene.keys.SHIFT.isDown ? 8 : 5;
-        let dx = 0;
-        let dy = 0;
-        let moved = false;
-
-        if (scene.cursors.up.isDown) { dy = -1; moved = true; }
-        if (scene.cursors.down.isDown) { dy = 1; moved = true; }
-        if (scene.cursors.left.isDown) { dx = -1; moved = true; }
-        if (scene.cursors.right.isDown) { dx = 1; moved = true; }
-
-        if (moved) {
-          if (dx !== 0 && dy !== 0) {
-            const m = Math.sqrt(dx * dx + dy * dy);
-            dx = (dx / m) * speed;
-            dy = (dy / m) * speed;
-          } else {
-            dx *= speed;
-            dy *= speed;
-          }
-
-          const direction = getDirection(dx, dy);
-          socket.emit('player:move', { dx, dy, direction });
-        }
-
-        if (simulationStarted && currentMission && currentMission.status === 'active') {
-          const px = scene.player.data.worldX;
-          const py = scene.player.data.worldY;
-
-          let inCorrectArea = false;
-          (scene.areas || []).forEach(area => {
-            if (area.getData('areaType') === currentMission.config.area) {
-              const ax = area.getData('worldX');
-              const ay = area.getData('worldY');
-              const w = area.getData('width');
-              const h = area.getData('height');
-
-              const dist = Math.sqrt((px - ax) ** 2 + (py - ay) ** 2);
-              if (dist < Math.max(w, h) / 2 + 20) {
-                inCorrectArea = true;
-              }
-            }
-          });
-
-          if (inCorrectArea) {
-            currentMission.progress = Math.min(100, currentMission.progress + 0.5);
-          } else {
-            currentMission.progress = Math.max(0, currentMission.progress - 0.2);
-          }
-
-          updateMissionProgress(currentMission.id, currentMission.progress);
-
-          if (currentMission.progress >= 100) {
-            completeMission(currentMission.id);
-          }
-        }
-      }
-
-      function createPlayer(scene, pd, local) {
-        const key = 'player_' + pd.id;
-        if (!scene.textures.exists(key)) {
-          const g = scene.add.graphics();
-          const color = local ? 0x3498db : 0xe74c3c;
-          g.fillStyle(color, 1);
-          g.fillCircle(20, 20, 15);
-          g.lineStyle(2, 0xffffff, 1);
-          g.strokeCircle(20, 20, 15);
-          g.generateTexture(key, 40, 40);
-          g.destroy();
-        }
-
-        const screen = worldToScreen(pd.x || 200, pd.y || 200);
-        const sprite = scene.add.sprite(screen.x, screen.y, key);
-
-        const short = (pd.id || 'n').slice(0, 6);
-        const nameText = scene.add.text(sprite.x, sprite.y - 28, short, {
-          fontSize: '12px',
-          color: local ? '#bfefff' : '#ffd6a6',
-          backgroundColor: '#000',
-          padding: { x: 4, y: 2 }
-        }).setOrigin(0.5);
-
-        const data = { worldX: pd.x || 200, worldY: pd.y || 200, id: pd.id };
-
-        return { sprite, nameText, data };
-      }
-
-      function getDirection(dx, dy) {
-        if (dy < 0 && dx === 0) return 'up';
-        if (dy > 0 && dx === 0) return 'down';
-        if (dx < 0 && dy === 0) return 'left';
-        if (dx > 0 && dy === 0) return 'right';
-        if (dx < 0 && dy < 0) return 'up-left';
-        if (dx > 0 && dy < 0) return 'up-right';
-        if (dx < 0 && dy > 0) return 'down-left';
-        if (dx > 0 && dy > 0) return 'down-right';
-        return 'idle';
-      }
-
-      function updateGameTimeUI(seconds) {
-        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const secs = (seconds % 60).toString().padStart(2, '0');
-        gameTimeEl.textContent = `${mins}:${secs}`;
-      }
-
-      function updatePlayerStatsUI(pd) {
-        if (!pd) return;
-
-        const healthEl = document.getElementById('stat-health');
-        const oxygenEl = document.getElementById('stat-oxygen');
-        const hungerEl = document.getElementById('stat-hunger');
-        const energyEl = document.getElementById('stat-energy');
-
-        if (healthEl) healthEl.textContent = `${pd.health}%`;
-        if (oxygenEl) oxygenEl.textContent = `${pd.oxygen}%`;
-        if (hungerEl) hungerEl.textContent = `${pd.hunger || 100}%`;
-        if (energyEl) energyEl.textContent = `${pd.energy || 100}%`;
-
-        if (playerAlive && pd.health <= 0) {
-          playerAlive = false;
-          addEventToLog('💀 Has muerto. Puedes observar pero no moverte ni completar misiones.');
-
-          const scene = game.scene.scenes[0];
-          if (scene.player && scene.player.nameText) {
-            scene.player.nameText.setText(`[DEAD] ${scene.player.nameText.text}`);
-            scene.player.nameText.setColor('#888');
-          }
-        }
-      }
-
-      // ============================================
-      // SISTEMA DE MISIONES
-      // ============================================
-      const activeMissionsMap = new Map();
-      let allMissions = [];
-      let completedCount = 0;
-
-      socket.on('missions:assigned', (data) => {
-        console.log('Missions assigned:', data);
-        allMissions = data.missions || [];
-        allMissions.forEach(mission => {
-          mission.progress = 0;
-          mission.status = 'pending';
-          activeMissionsMap.set(mission.id, mission);
-        });
-        updateMissionsUI();
-        addEventToLog(`${allMissions.length} misiones asignadas`);
-      });
-
-      socket.on('mission:completed', (data) => {
-        console.log('Mission completed from server:', data);
-        const mission = activeMissionsMap.get(data.mission.id);
-        if (mission) {
-          mission.status = 'completed';
-          mission.progress = 100;
-          completedCount++;
-          updateMissionsUI();
-
-          const scene = game.scene.scenes[0];
-          if (scene && scene.cameras) {
-            scene.cameras.main.flash(400, 100, 255, 100);
-          }
         }
       });
 
-      function completeMission(missionId) {
-        const mission = activeMissionsMap.get(missionId);
-        if (!mission || mission.status === 'completed') return;
-
-        mission.status = 'completed';
-        mission.progress = 100;
-        completedCount++;
-        currentMission = null;
-
-        addEventToLog(`✅ ${mission.config.name} completada`);
-        updateMissionsUI();
-
-        socket.emit('mission:activate', {
-          missionId: mission.id,
-          playerId: playerId || socket.id
-        });
-
-        const scene = game.scene.scenes[0];
-        if (scene && scene.cameras) {
-          scene.cameras.main.flash(400, 100, 255, 100);
-        }
-      }
-
-      function updateMissionsUI() {
-        const missionsList = document.getElementById('missions-list');
-        const missionCounter = document.getElementById('mission-counter');
-
-        missionCounter.textContent = `(${completedCount}/${allMissions.length})`;
-
-        if (allMissions.length === 0) {
-          missionsList.innerHTML = `
-          <div style="text-align:center; color:#9aa7b2; font-size:12px; padding:20px;">
-            Sin misiones asignadas
-          </div>
-        `;
-          return;
+      (function checkDeps(){
+        const log = (m) => {
+          console.log(`[Check] ${m}`);
+        };
+        
+        if (typeof Phaser === 'undefined') {
+          log('ERROR: Phaser no está cargado. Revisa la URL del CDN.');
+        } else {
+          log('Phaser OK: v' + (Phaser.VERSION || 'unknown'));
         }
 
-        missionsList.innerHTML = '';
-
-        allMissions.forEach((mission) => {
-          let statusClass = '';
-          let statusText = 'Pendiente';
-          let isOwned = missionOwnership[mission.id] === playerId;
-          let isClaimed = missionOwnership[mission.id] && !isOwned;
-
-          if (mission.status === 'active' || isOwned) {
-            statusClass = 'active';
-            statusText = isOwned ? 'Tu misión' : 'En progreso';
-          } else if (mission.status === 'completed') {
-            statusClass = 'completed';
-            statusText = 'Completada';
-          } else if (isClaimed) {
-            statusText = 'Reclamada';
-          }
-
-          const card = document.createElement('div');
-          card.className = `mission-card ${statusClass}`;
-          card.style.cursor = (mission.status === 'completed' || isClaimed) ? 'not-allowed' : 'pointer';
-          card.style.opacity = (mission.status === 'completed' || isClaimed) ? '0.6' : '1';
-
-          card.innerHTML = `
-          <div class="mission-header">
-            <div class="mission-name">${mission.config.name}</div>
-            <div class="mission-status">${statusText}</div>
-          </div>
-          <div class="mission-description">${mission.config.description}</div>
-          <div class="mission-area">${mission.config.area}</div>
-          <div class="mission-progress-bar">
-            <div class="mission-progress-fill" id="mission-progress-${mission.id}" style="width: ${mission.progress}%"></div>
-          </div>
-          <div class="mission-progress-text">${Math.floor(mission.progress)}%</div>
-        `;
-
-          card.addEventListener('click', () => {
-            if (!playerAlive) {
-              showWarning('Estás muerto y no puedes reclamar misiones');
-              return;
-            }
-
-            if (mission.status === 'completed') {
-              showWarning('Esta misión ya está completada');
-              return;
-            }
-
-            if (currentMission && currentMission.status !== 'completed') {
-              showWarning('Ya tienes una misión asignada');
-              return;
-            }
-
-            if (missionOwnership[mission.id] && missionOwnership[mission.id] !== playerId) {
-              showWarning('Otro jugador ya reclamó esta misión');
-              return;
-            }
-
-            missionOwnership[mission.id] = playerId;
-            currentMission = mission;
-            mission.status = 'active';
-            mission.progress = 0;
-            updateMissionsUI();
-            addEventToLog(`📋 Reclamaste: ${mission.config.name}`);
-          });
-
-          missionsList.appendChild(card);
-        });
-      }
-
-      function updateMissionProgress(missionId, progress) {
-        const progressBar = document.getElementById(`mission-progress-${missionId}`);
-        if (progressBar) {
-          progressBar.style.width = `${progress}%`;
+        if (typeof io === 'undefined') {
+          log('AVISO: socket.io cliente no cargado.');
+        } else {
+          log('socket.io OK');
         }
 
-        const mission = activeMissionsMap.get(missionId);
-        if (mission) {
-          const card = Array.from(document.querySelectorAll('.mission-card')).find(c =>
-            c.querySelector(`#mission-progress-${missionId}`)
-          );
-          if (card) {
-            const progressText = card.querySelector('.mission-progress-text');
-            if (progressText) {
-              progressText.textContent = `${Math.floor(progress)}%`;
-            }
-          }
-        }
-      }
-
-      // ============================================
-      // SISTEMA DE EVENTOS
-      // ============================================
-      const activeEventsMap = new Map();
-
-      socket.on('event:triggered', (event) => {
-        console.log('Event triggered:', event);
-        activeEventsMap.set(event.id, event);
-        updateEventsUI();
-        addEventToLog(`${event.config.icon} ${event.config.name}`);
-
-        const scene = game.scene.scenes[0];
-        if (scene && scene.cameras) {
-          scene.cameras.main.flash(300, 255, 100, 100);
-        }
-      });
-
-      socket.on('event:resolved', (data) => {
-        console.log('Event resolved:', data);
-        activeEventsMap.delete(data.eventId);
-        updateEventsUI();
-        addEventToLog(`Evento resuelto`);
-      });
-
-      socket.on('event:active_list', (events) => {
-        console.log('Active events received:', events);
-        activeEventsMap.clear();
-        events.forEach(event => {
-          activeEventsMap.set(event.id, event);
-        });
-        updateEventsUI();
-      });
-
-      function updateEventsUI() {
-        const eventsList = document.getElementById('events-list');
-
-        if (activeEventsMap.size === 0) {
-          eventsList.innerHTML = '<div style="text-align:center; color:#9aa7b2; font-size:12px; padding:10px;">Sin eventos</div>';
-          return;
+        if (typeof window._eventsLoaded === 'undefined') {
+          log('AVISO: events.js no parece inicializarse correctamente.');
+        } else {
+          log('events.js OK');
         }
 
-        let html = '';
-        activeEventsMap.forEach((event, eventId) => {
-          const timeLeft = Math.max(0, Math.ceil((event.endTime - Date.now()) / 1000));
-          const minutes = Math.floor(timeLeft / 60);
-          const seconds = timeLeft % 60;
-
-          html += `
-          <div class="event-card" style="border-left-color: #${event.config.color.toString(16)}">
-            <div class="event-header">${event.config.icon} ${event.config.name}</div>
-            <div class="event-description">${event.config.description}</div>
-            <div class="event-timer">⏱️ ${minutes}:${seconds.toString().padStart(2, '0')}</div>
-            ${event.config.requiresPlayerAction ? `
-              <button class="event-resolve-btn" onclick="window.resolveEvent('${eventId}')">Resolver</button>
-            ` : ''}
-          </div>
-        `;
-        });
-
-        eventsList.innerHTML = html;
-      }
-
-      window.resolveEvent = function (eventId) {
-        console.log('Resolviendo evento:', eventId);
-        socket.emit('event:resolve', { eventId });
-      };
-
-      // ============================================
-      // INICIAR SIMULACIÓN
-      // ============================================
-      const startSimBtn = document.getElementById('start-sim-btn');
-
-      startSimBtn.addEventListener('click', () => {
-        if (simulationStarted) return;
-
-        console.log('Starting simulation...');
-        const placedAreasArray = Array.from(placedAreas);
-
-        if (placedAreasArray.length === 0) {
-          addEventToLog('No hay áreas colocadas');
-          return;
+        if (!window._missionsLoaded) {
+          log('AVISO: missions.js no parece inicializarse correctamente.');
+        } else {
+          log('missions.js OK');
         }
 
-        simulationStarted = true;
-        startSimBtn.style.display = 'none';
-
-        socket.emit('simulation:start', {
-          sessionId: sessionId,
-          playerRoles: playerRoles,
-          placedAreas: placedAreasArray
-        });
-
-        addEventToLog('Iniciando simulación...');
-      });
-
-      socket.on('simulation:started', (data) => {
-        console.log('Simulation started:', data);
-        addEventToLog('Simulación iniciada');
-      });
-
-      socket.on('missions:initialized', (data) => {
-        console.log('Missions initialized:', data);
-        addEventToLog(`Sistema de misiones iniciado (${data.count} misiones)`);
-      });
-
-      window._spatium = { socket, playerId, sessionId };
-
-    });
-  </script>
-</body>
-
+        if (!window._mainLoaded) {
+          log('AVISO: main.js no parece inicializarse correctamente.');
+        } else {
+          log('main.js OK');
+        }
+      })();
+    </script>
+  </body>
 </html>
