@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { joinRoom } from "@/lib/room-store"
 
-export async function POST(
-  request: NextRequest,
-  context: { params: { roomId: string } }
-) {
+// Usa el tipo genérico del contexto de ruta
+interface RouteContext {
+  params: { roomId: string }
+}
+
+export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    const { roomId } = context.params
+    const roomId = context.params.roomId
     console.log("[v0] Join room request for roomId:", roomId)
 
     const { playerName } = await request.json()
