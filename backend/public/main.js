@@ -526,9 +526,10 @@ function createAreaVisual(scene, areaMeta, emitToServer = false) {
     addIconToContainer(icon);
   }
   container.setInteractive(
-    new window.Phaser.Geom.Rectangle(0, 0, w * TILE_W, h * TILE_W),
+    new window.Phaser.Geom.Rectangle(0, 0, w * TILE_W, h * TILE_H),
     window.Phaser.Geom.Rectangle.Contains
   );
+
   container.setData("areaId", id);
   scene.input.setDraggable(container);
 
@@ -623,9 +624,9 @@ function selectArea(id) {
     const g = prev.container.list[0];
     g.clear()
       .fillStyle(colorForType(prev.meta.type), 0.35)
-      .fillRect(0, 0, prev.meta.w * TILE_W, prev.meta.h * TILE_W)
+      .fillRect(0, 0, prev.meta.w * TILE_W, prev.meta.h * TILE_H)
       .lineStyle(2, colorForType(prev.meta.type), 1)
-      .strokeRect(0, 0, prev.meta.w * TILE_W, prev.meta.h * TILE_W);
+      .strokeRect(0, 0, prev.meta.w * TILE_W, prev.meta.h * TILE_H);
   }
   selectedAreaId = id;
   if (!areasById.has(id)) return;
@@ -633,9 +634,9 @@ function selectArea(id) {
   const g = sel.container.list[0];
   g.clear()
     .fillStyle(colorForType(sel.meta.type), 0.35)
-    .fillRect(0, 0, sel.meta.w * TILE_W, sel.meta.h * TILE_W)
+    .fillRect(0, 0, sel.meta.w * TILE_W, sel.meta.h * TILE_H)
     .lineStyle(4, 0xffff00, 1)
-    .strokeRect(0, 0, sel.meta.w * TILE_W, sel.meta.h * TILE_W);
+    .strokeRect(0, 0, sel.meta.w * TILE_W, sel.meta.h * TILE_H);
   appendLog("selected area " + id);
 }
 function getSelectedArea() {
@@ -664,7 +665,7 @@ function rotateSelected(objEntry) {
   const scene = game.scene.scenes[0];
   const g = scene.add.graphics();
   g.fillStyle(colorForType(meta.type), 0.35);
-  g.fillRect(0, 0, meta.w * TILE_W, meta.h * TILE_W);
+  g.fillRect(0, 0, meta.w * TILE_W, meta.h * TILE_H);
   g.lineStyle(2, colorForType(meta.type), 1);
   g.strokeRect(0, 0, meta.w * TILE_W, meta.h * TILE_H);
   const label = scene.add.text(4, 4, meta.type, {
@@ -672,7 +673,7 @@ function rotateSelected(objEntry) {
     color: "#111",
   });
   container.add([g, label]);
-  container.setSize(meta.w * TILE_W, meta.h * TILE_W);
+  container.setSize(meta.w * TILE_W, meta.h * TILE_H);
   fillAreaTiles(meta, meta.id);
   pushUndo({ type: "rotate", areaId: meta.id, from: prev, to: clone(meta) });
   window.socket.emit &&
@@ -739,6 +740,22 @@ function preloadScene() {
 }
 
 function createScene() {
+
+  function getCanvasRelativePointer(pointer, scene) {
+  const rect = scene.sys.canvas.getBoundingClientRect();
+
+  if (pointer && pointer.event && pointer.event.clientX !== undefined) {
+    return { x: pointer.event.clientX - rect.left, y: pointer.event.clientY - rect.top };
+  }
+
+  if (typeof pointer.x === "number" && typeof pointer.y === "number") {
+    const scaleX = rect.width / scene.sys.canvas.width;
+    const scaleY = rect.height / scene.sys.canvas.height;
+    return { x: pointer.x * scaleX, y: pointer.y * scaleY };
+  }
+  return { x: 0, y: 0 };
+}
+
   const scene = this;
   const { width, height } = scene.sys.game.canvas;
   debugLogEl = document.getElementById("log");
@@ -765,7 +782,77 @@ function createScene() {
       );
     }
   }
+  this.baseGridGraphics = g;
+  
+function redrawGrid() {
+  // recomputar grid origin según tamaño actual del canvas
+  const canvasW = scene.sys.canvas.width;
+  const canvasH = scene.sys.canvas.height;
+  GRID_ORIGIN_X = Math.floor((canvasW - TILE_W * GRID_COLS) / 2);
+  GRID_ORIGIN_Y = Math.floor((canvasH - TILE_H * GRID_ROWS) / 2);
 
+  // redraw base grid
+  scene.baseGridGraphics.clear();
+  scene.baseGridGraphics.lineStyle(1, 0x333333, 1);
+  for (let yy = 0; yy < GRID_ROWS; yy++) {
+    for (let xx = 0; xx < GRID_COLS; xx++) {
+      scene.baseGridGraphics.strokeRect(
+        GRID_ORIGIN_X + xx * TILE_W,
+        GRID_ORIGIN_Y + yy * TILE_H,
+        TILE_W,
+        TILE_H
+      );
+    }
+  }
+
+  // reposicionar mapImg si existe
+  if (scene.mapImg) {
+    const targetW = TILE_W * GRID_COLS;
+    const targetH = TILE_H * GRID_ROWS;
+    const tex = scene.textures.get("map");
+    const srcImg = tex && tex.getSourceImage();
+    const srcW = srcImg ? srcImg.width : targetW;
+    const srcH = srcImg ? srcImg.height : targetH;
+    const scale = Math.min(targetW / srcW, targetH / srcH);
+    const displayW = Math.round(srcW * scale);
+    const displayH = Math.round(srcH * scale);
+    scene.mapImg.setDisplaySize(displayW, displayH);
+    const extraX = Math.floor((targetW - displayW) / 2);
+    const extraY = Math.floor((targetH - displayH) / 2);
+    scene.mapImg.x = GRID_ORIGIN_X + extraX;
+    scene.mapImg.y = GRID_ORIGIN_Y + extraY;
+  }
+
+  // reposicionar areas existentes
+  areasById.forEach((entry) => {
+    const meta = entry.meta;
+    entry.container.x = GRID_ORIGIN_X + meta.x * TILE_W;
+    entry.container.y = GRID_ORIGIN_Y + meta.y * TILE_H;
+  });
+
+  // reposicionar in-game toolbar bottom-center
+  if (scene._inGameToolbar && scene._inGameToolbar.container) {
+    scene._inGameToolbar.container.x = scene.sys.canvas.width / 2;
+    scene._inGameToolbar.container.y = scene.sys.canvas.height - 40;
+  }
+
+  // reajustar playerSprite depth/posición relativa si existe
+  if (playerSprite) {
+    playerSprite.setDepth(playerSprite.y);
+  }
+}
+
+// Llamar inicialmente para normalizar (ya que el config ahora puede haber inicializado con el tamaño real)
+redrawGrid();
+
+// escuchar cambios de tamaño (cuando el usuario redimensione la ventana o cambie layout)
+this.scale.on("resize", () => {
+  try {
+    redrawGrid();
+  } catch (e) {
+    console.warn("resize redrawGrid failed", e);
+  }
+});
   // Hud top-left stats (hidden initially; will fade-in on Start Simulation)
   const vars = ["hp", "hunger", "oxygen", "energy", "sanity", "fatigue"];
   const playerStats = {};
@@ -942,9 +1029,11 @@ function createScene() {
             const key = `area_icon_${a.type}`;
             const follow = scene.add
               .image(pointer.x, pointer.y, key)
+              .setOrigin(0.5) 
               .setDisplaySize(36, 36)
               .setDepth(6000)
               .setAlpha(0.95);
+
             follow.setScrollFactor(0);
             scene._dragFollowSprite = follow;
           } catch (e) {
@@ -1124,18 +1213,27 @@ function createScene() {
   // pointermove -> preview (apply origin offset)
   this.input.on("pointermove", (pointer) => {
     if (isIsometricMode || !currentDraggedArea) return;
-    const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+
+    // Convertir coordenadas globales del mouse a coordenadas relativas al canvas
+    const rect = scene.sys.canvas.getBoundingClientRect();
+    const relX = pointer.x - rect.left;
+    const relY = pointer.y - rect.top;
+
+    const worldPoint = this.cameras.main.getWorldPoint(relX, relY);
     const localX = worldPoint.x - GRID_ORIGIN_X;
     const localY = worldPoint.y - GRID_ORIGIN_Y;
-    const tx = Math.floor(localX / TILE_W),
-      ty = Math.floor(localY / TILE_H);
+
+    const tx = Math.floor(localX / TILE_W);
+    const ty = Math.floor(localY / TILE_H);
+
     updateGhost(tx, ty);
-    // update follow sprite position (convert to canvas coords)
+
+    // Actualizar posición del sprite que sigue el puntero
     try {
       if (scene._dragFollowSprite) {
-        const rect = scene.sys.canvas.getBoundingClientRect();
-        scene._dragFollowSprite.x = pointer.x;
-        scene._dragFollowSprite.y = pointer.y;
+        const world = scene.cameras.main.getWorldPoint(relX, relY);
+        scene._dragFollowSprite.x = world.x;
+        scene._dragFollowSprite.y = world.y;
       }
     } catch (e) {
       // ignore
@@ -1178,8 +1276,9 @@ function createScene() {
 
   function phaserPointerUp(pointer) {
     if (isIsometricMode || !currentDraggedArea) return;
+    const rel = getCanvasRelativePointer(pointer, scene);
+    const worldPoint = scene.cameras.main.getWorldPoint(rel.x, rel.y);
 
-    const worldPoint = scene.cameras.main.getWorldPoint(pointer.x, pointer.y);
     const localX = worldPoint.x - GRID_ORIGIN_X;
     const localY = worldPoint.y - GRID_ORIGIN_Y;
     const tx = Math.floor(localX / TILE_W),
@@ -1402,11 +1501,19 @@ function updateScene() {
 }
 
 // --------- BOOT PHASER ----------
+const _gameParentEl = document.getElementById("game") || document.body;
+const INITIAL_GAME_W = Math.max(200, _gameParentEl.clientWidth);
+const INITIAL_GAME_H = Math.max(200, _gameParentEl.clientHeight);
+
 const phaserConfig = {
   type: window.Phaser.AUTO,
   parent: "game",
-  width: 640,
-  height: 640,
+  width: INITIAL_GAME_W,
+  height: INITIAL_GAME_H,
+  scale: {
+    mode: window.Phaser.Scale.RESIZE, // ensures canvas size follows container
+    autoCenter: window.Phaser.Scale.CENTER_BOTH,
+  },
   pixelArt: true,
   backgroundColor: "#222222",
   scene: { preload: preloadScene, create: createScene, update: updateScene },
