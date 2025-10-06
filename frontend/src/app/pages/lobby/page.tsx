@@ -89,10 +89,17 @@ export default function LobbyPage() {
       console.log("[v0] Joined room successfully:", player)
 
       router.push(`/pages/room/${roomId}?name=${encodeURIComponent(playerName)}&playerId=${player.id}`)
-    } catch (error: any) {
+    } catch (error) {
   console.error("[v0] Error joining room:", error)
-  alert(error.message || "Failed to join room. Please check the code and try again.")
+  
+  const message =
+    error instanceof Error
+      ? error.message
+      : "Failed to join room. Please check the code and try again."
+  
+  alert(message)
 }
+
  finally {
       setIsJoining(false)
     }
