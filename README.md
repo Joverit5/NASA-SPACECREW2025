@@ -27,16 +27,16 @@
 <h3 align="center">SPATIUM</h3>
 
   <p align="center">
-    A multiplayer real-time strategy game where players cooperate to manage resources, overcome random events, and build a thriving space colony. Players can create or join game rooms, be assigned roles, interact with resources, and experience real-time synchronization of game events.
+    A multiplayer real-time strategy game where players cooperate to manage resources, overcome random events, and build a thriving space colony. Players can create or join game rooms, interact with resources, and experience real-time synchronization of game events.
     <br />
-    <a href="https://github.com/your-username/SPATIUM.git"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/Joverit5/NASA-SPACECREW2025.git"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://spatium-demo.vercel.app">View Demo</a>
     ·
-   <a href="https://github.com/your-username/SPATIUM/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+   <a href="https://github.com/Joverit5/NASA-SPACECREW2025/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     ·
-   <a href="https://github.com/your-username/SPATIUM/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+   <a href="https://github.com/Joverit5/NASA-SPACECREW2025/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
 
   </p>
 </div>
@@ -104,7 +104,6 @@ SPATIUM is a multiplayer real-time strategy game where players cooperate to mana
 - **Random Events:** Adapt to unexpected challenges and opportunities.
 - **In-Game Currency:** Earn and spend currency to enhance your colony.
 - **Real-Time Synchronization:** Experience seamless, real-time updates of game events.
-- **Role Assignment:** Each player takes on a unique role within the colony.
 - **Dynamic Game Rooms:** Create and join game rooms with ease.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -237,7 +236,7 @@ Don't forget to give the project a star! Thanks again!
 ### Top contributors:
 
 <a href="https://github.com/your-username/SPATIUM/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=your-username/SPATIUM" alt="contrib.rocks image" />
+  <img src="https://github.com/Joverit5/NASA-SPACECREW2025.git" alt="contrib.rocks image" />
 </a>
 
 
@@ -259,7 +258,7 @@ This project is licensed under the MIT License. See `LICENSE.txt` for more infor
 - Eduardo Negrin - enegrin@utb.edu.co
 - Isabella Arrieta - arrietai@utb.edu.co
 
-Project Link: [https://github.com/your-username/SPATIUM](https://github.com/your-username/SPATIUM)
+Project Link: [https://github.com/Joverit5/NASA-SPACECREW2025.git](https://github.com/Joverit5/NASA-SPACECREW2025.git)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
