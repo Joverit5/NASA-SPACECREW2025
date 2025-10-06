@@ -1,0 +1,121 @@
+{
+  "rooms": {
+    "X7K9M2": {
+      "id": "X7K9M2",
+      "creatorId": "player-001",
+      "maxPlayers": 5,
+      "players": [
+        {
+          "id": "player-001",
+          "name": "Captain Nova",
+          "ready": true,
+          "hp": 100,
+          "role": "Engineer"
+        },
+        {
+          "id": "player-002",
+          "name": "Dr. Chen",
+          "ready": false,
+          "hp": 100,
+          "role": "Medic"
+        }
+      ],
+      "createdAt": "2025-01-15T10:00:00.000Z"
+    },
+    "P4Q8N1": {
+      "id": "P4Q8N1",
+      "creatorId": "player-003",
+      "maxPlayers": 5,
+      "players": [
+        {
+          "id": "player-003",
+          "name": "Commander Reyes",
+          "ready": true,
+          "hp": 100,
+          "role": "Scientist"
+        }
+      ],
+      "createdAt": "2025-01-15T11:30:00.000Z"
+    },
+    "R5T3W6": {
+      "id": "R5T3W6",
+      "creatorId": "player-004",
+      "maxPlayers": 5,
+      "players": [
+        {
+          "id": "player-004",
+          "name": "Tech Specialist Kim",
+          "ready": true,
+          "hp": 100,
+          "role": "Technician"
+        },
+        {
+          "id": "player-005",
+          "name": "Bio Expert Torres",
+          "ready": true,
+          "hp": 100,
+          "role": "Biologist"
+        },
+        {
+          "id": "player-006",
+          "name": "Engineer Park",
+          "ready": false,
+          "hp": 100,
+          "role": "Engineer"
+        }
+      ],
+      "createdAt": "2025-01-15T12:00:00.000Z"
+    },
+    "J2H7L9": {
+      "id": "J2H7L9",
+      "creatorId": "player-007",
+      "maxPlayers": 5,
+      "players": [
+        {
+          "id": "player-007",
+          "name": "Mission Lead Santos",
+          "ready": false,
+          "hp": 100
+        }
+      ],
+      "createdAt": "2025-01-15T13:15:00.000Z"
+    },
+    "V8C4B3": {
+      "id": "V8C4B3",
+      "creatorId": "player-008",
+      "maxPlayers": 5,
+      "players": [],
+      "createdAt": "2025-01-15T14:00:00.000Z"
+    }
+  },
+  "messages": {
+    "X7K9M2": [
+      {
+        "id": "msg-001",
+        "playerId": "player-001",
+        "playerName": "Captain Nova",
+        "message": "Welcome to the mission!",
+        "timestamp": "2025-01-15T10:05:00.000Z"
+      },
+      {
+        "id": "msg-002",
+        "playerId": "player-002",
+        "playerName": "Dr. Chen",
+        "message": "Ready for deployment",
+        "timestamp": "2025-01-15T10:06:00.000Z"
+      }
+    ],
+    "P4Q8N1": [
+      {
+        "id": "msg-003",
+        "playerId": "player-003",
+        "playerName": "Commander Reyes",
+        "message": "Looking for crew members",
+        "timestamp": "2025-01-15T11:35:00.000Z"
+      }
+    ],
+    "R5T3W6": [],
+    "J2H7L9": [],
+    "V8C4B3": []
+  }
+}

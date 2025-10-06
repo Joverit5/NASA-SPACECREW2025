@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     console.log("[v0] Creating room for player:", playerName)
-    const { roomId, player } = createRoom(playerName.trim())
+    const { roomId, player } = await createRoom(playerName.trim())
     console.log("[v0] Room created successfully:", roomId, player)
 
     return NextResponse.json({ roomId, player })
