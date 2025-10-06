@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { joinRoom } from "@/lib/room-store"
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export async function POST(request: NextRequest, context: any) {
   try {
     const roomId = context?.params?.roomId
