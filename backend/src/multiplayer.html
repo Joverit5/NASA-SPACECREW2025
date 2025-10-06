@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Test - Phaser</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        #game-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            background: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 250px;
+            z-index: 1000;
+        }
+        .stat-bar {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .stat-label {
+            width: 80px;
+            font-size: 14px;
+        }
+        .bar-container {
+            flex: 1;
+            height: 20px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .health { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+        .oxygen { background: linear-gradient(90deg, #3498db, #2980b9); }
+        .hunger { background: linear-gradient(90deg, #f39c12, #e67e22); }
+        .energy { background: linear-gradient(90deg, #2ecc71, #27ae60); }
+        .sanity { background: linear-gradient(90deg, #9b59b6, #8e44ad); }
+        .time-display {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #3498db;
+        }
+        .event-log {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            color: #fff;
+        }
+        .event-item {
+            margin: 5px 0;
+            padding: 8px;
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 3px solid #3498db;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            color: #fff;
+        }
+        .controls h3 {
+            margin: 0 0 10px 0;
+            color: #3498db;
+        }
+        .controls p {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    
+    <div id="ui-overlay">
+        <div class="time-display" id="gameTime">00:00</div>
+        <div id="playerStats"></div>
+    </div>
+
+    <div class="event-log" id="eventLog">
+        <strong>📋 Event Log</strong>
+        <div id="eventList"></div>
+    </div>
+
+    <div class="controls">
+        <h3>🎮 Controles</h3>
+        <p>⬆️⬇️⬅️➡️ Flechas: Mover</p>
+        <p>WASD: Mover alternativo</p>
+        <p>Shift: Correr</p>
+    </div>
+
+    <script>
+        // Configuración del socket - Detecta automáticamente si es local o remoto
+        const isLocalhost = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1';
+        
+        // Si estás sirviendo desde el mismo servidor, usa window.location.origin
+        // Si no, especifica la IP manualmente
+        const SERVER_URL = isLocalhost 
+            ? 'http://localhost:4000' 
+            : window.location.origin; // Usa el mismo origen del HTML
+        
+        console.log('🔌 Conectando a:', SERVER_URL);
+        const socket = io(SERVER_URL);
+        
+        // Variables globales
+        let myPlayerId = null;
+        let otherPlayers = {};
+        let currentGameTime = 0;
+
+        // Configuración de Phaser
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            parent: 'game-container',
+            backgroundColor: '#0f3460',
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            },
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    debug: false
+                }
+            }
+        };
+
+        const game = new Phaser.Game(config);
+
+        function preload() {
+            // Crear sprites simples con gráficos
+            this.load.on('complete', () => {
+                console.log('✅ Recursos cargados');
+            });
+        }
+
+        function create() {
+            const scene = this;
+            
+            // Crear grid de fondo
+            const graphics = this.add.graphics();
+            graphics.lineStyle(1, 0x16213e, 0.3);
+            for (let x = 0; x < 800; x += 50) {
+                graphics.lineBetween(x, 0, x, 600);
+            }
+            for (let y = 0; y < 600; y += 50) {
+                graphics.lineBetween(0, y, 800, y);
+            }
+
+            // Título
+            this.add.text(400, 30, '🌊 Multiplayer Test', {
+                fontSize: '28px',
+                fontFamily: 'Courier New',
+                color: '#3498db',
+                stroke: '#000',
+                strokeThickness: 4
+            }).setOrigin(0.5);
+
+            // Crear jugador local
+            scene.player = null;
+            
+            // Input
+            scene.cursors = this.input.keyboard.createCursorKeys();
+            scene.keys = this.input.keyboard.addKeys({
+                W: Phaser.Input.Keyboard.KeyCodes.W,
+                A: Phaser.Input.Keyboard.KeyCodes.A,
+                S: Phaser.Input.Keyboard.KeyCodes.S,
+                D: Phaser.Input.Keyboard.KeyCodes.D,
+                SHIFT: Phaser.Input.Keyboard.KeyCodes.SHIFT
+            });
+
+            // Socket events
+            socket.on('connect', () => {
+                myPlayerId = socket.id;
+                console.log('🟢 Conectado:', myPlayerId);
+                addEventToLog('Conectado al servidor');
+            });
+
+            socket.on('state:update', (state) => {
+                currentGameTime = state.gameTime;
+                updateGameTimeUI(state.gameTime);
+                
+                // Actualizar jugadores
+                Object.values(state.players).forEach(playerData => {
+                    if (playerData.id === myPlayerId) {
+                        // Mi jugador
+                        if (!scene.player) {
+                            scene.player = createPlayer(scene, playerData, true);
+                        }
+                        updatePlayerStats(playerData);
+                    } else {
+                        // Otros jugadores
+                        if (!otherPlayers[playerData.id]) {
+                            otherPlayers[playerData.id] = createPlayer(scene, playerData, false);
+                        }
+                        updateOtherPlayer(scene, playerData);
+                    }
+                });
+
+                // Remover jugadores desconectados
+                Object.keys(otherPlayers).forEach(id => {
+                    if (!state.players[id]) {
+                        otherPlayers[id].sprite.destroy();
+                        otherPlayers[id].nameText.destroy();
+                        delete otherPlayers[id];
+                    }
+                });
+            });
+
+            socket.on('game:event', (event) => {
+                console.log('🎪 Evento:', event);
+                handleGameEvent(scene, event);
+            });
+
+            socket.on('disconnect', () => {
+                console.log('🔴 Desconectado');
+                addEventToLog('Desconectado del servidor');
+            });
+        }
+
+        function update() {
+            if (!this.player) return;
+
+            const speed = this.keys.SHIFT.isDown ? 8 : 5;
+            let dx = 0;
+            let dy = 0;
+            let moved = false;
+
+            // Detectar input
+            if (this.cursors.up.isDown || this.keys.W.isDown) {
+                dy = -1;
+                moved = true;
+            }
+            if (this.cursors.down.isDown || this.keys.S.isDown) {
+                dy = 1;
+                moved = true;
+            }
+            if (this.cursors.left.isDown || this.keys.A.isDown) {
+                dx = -1;
+                moved = true;
+            }
+            if (this.cursors.right.isDown || this.keys.D.isDown) {
+                dx = 1;
+                moved = true;
+            }
+
+            if (moved) {
+                // Normalizar movimiento diagonal
+                if (dx !== 0 && dy !== 0) {
+                    const magnitude = Math.sqrt(dx * dx + dy * dy);
+                    dx = (dx / magnitude) * speed;
+                    dy = (dy / magnitude) * speed;
+                } else {
+                    dx *= speed;
+                    dy *= speed;
+                }
+
+                // Determinar dirección
+                let direction = 'idle';
+                if (dy < 0 && dx < 0) direction = 'up-left';
+                else if (dy < 0 && dx > 0) direction = 'up-right';
+                else if (dy > 0 && dx < 0) direction = 'down-left';
+                else if (dy > 0 && dx > 0) direction = 'down-right';
+                else if (dy < 0) direction = 'up';
+                else if (dy > 0) direction = 'down';
+                else if (dx < 0) direction = 'left';
+                else if (dx > 0) direction = 'right';
+
+                // Actualizar posición local inmediatamente (client-side prediction)
+                this.player.sprite.x += dx;
+                this.player.sprite.y += dy;
+                this.player.nameText.x = this.player.sprite.x;
+                this.player.nameText.y = this.player.sprite.y - 30;
+
+                // Emitir al servidor
+                socket.emit('player:move', { dx, dy, direction });
+
+                // Actualizar rotación del sprite según dirección
+                updatePlayerRotation(this.player.sprite, direction);
+            }
+        }
+
+        function createPlayer(scene, playerData, isLocal) {
+            // Crear sprite circular
+            const graphics = scene.add.graphics();
+            const color = isLocal ? 0x3498db : 0xe74c3c;
+            graphics.fillStyle(color, 1);
+            graphics.fillCircle(0, 0, 15);
+            graphics.lineStyle(3, 0xffffff, 1);
+            graphics.strokeCircle(0, 0, 15);
+            
+            // Añadir dirección (triángulo)
+            graphics.fillStyle(0xffffff, 1);
+            graphics.fillTriangle(-5, -10, 5, -10, 0, -20);
+            
+            graphics.generateTexture('player_' + playerData.id, 40, 40);
+            graphics.destroy();
+
+            const sprite = scene.add.sprite(playerData.x, playerData.y, 'player_' + playerData.id);
+            
+            // Mostrar el mismo ID corto para todos
+            const shortId = playerData.id.substring(0, 6);
+            const nameText = scene.add.text(playerData.x, playerData.y - 30, 
+                shortId, {
+                fontSize: '12px',
+                color: isLocal ? '#3498db' : '#e74c3c',
+                backgroundColor: '#000',
+                padding: { x: 5, y: 2 }
+            }).setOrigin(0.5);
+
+            return { sprite, nameText, data: playerData };
+        }
+
+        function updateOtherPlayer(scene, playerData) {
+            const player = otherPlayers[playerData.id];
+            if (!player) return;
+
+            // Interpolación suave
+            scene.tweens.add({
+                targets: [player.sprite, player.nameText],
+                x: playerData.x,
+                y: playerData.y,
+                duration: 50,
+                ease: 'Linear'
+            });
+            
+            player.nameText.y = playerData.y - 30;
+            updatePlayerRotation(player.sprite, playerData.direction);
+        }
+
+        function updatePlayerRotation(sprite, direction) {
+            const rotations = {
+                'up': -90,
+                'down': 90,
+                'left': 180,
+                'right': 0,
+                'up-left': -135,
+                'up-right': -45,
+                'down-left': 135,
+                'down-right': 45
+            };
+            sprite.angle = rotations[direction] || 0;
+        }
+
+        function updatePlayerStats(playerData) {
+            const statsHTML = `
+                <div class="stat-bar">
+                    <span class="stat-label">❤️ Vida</span>
+                    <div class="bar-container">
+                        <div class="bar-fill health" style="width: ${playerData.health}%"></div>
+                    </div>
+                    <span>${playerData.health}</span>
+                </div>
+                <div class="stat-bar">
+                    <span class="stat-label">💨 O2</span>
+                    <div class="bar-container">
+                        <div class="bar-fill oxygen" style="width: ${playerData.oxygen}%"></div>
+                    </div>
+                    <span>${playerData.oxygen}</span>
+                </div>
+                <div class="stat-bar">
+                    <span class="stat-label">🍖 Hambre</span>
+                    <div class="bar-container">
+                        <div class="bar-fill hunger" style="width: ${playerData.hunger}%"></div>
+                    </div>
+                    <span>${playerData.hunger}</span>
+                </div>
+                <div class="stat-bar">
+                    <span class="stat-label">⚡ Energía</span>
+                    <div class="bar-container">
+                        <div class="bar-fill energy" style="width: ${playerData.energy}%"></div>
+                    </div>
+                    <span>${playerData.energy}</span>
+                </div>
+                <div class="stat-bar">
+                    <span class="stat-label">🧠 Cordura</span>
+                    <div class="bar-container">
+                        <div class="bar-fill sanity" style="width: ${playerData.sanity}%"></div>
+                    </div>
+                    <span>${playerData.sanity}</span>
+                </div>
+            `;
+            document.getElementById('playerStats').innerHTML = statsHTML;
+        }
+
+        function updateGameTimeUI(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            const timeString = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            document.getElementById('gameTime').textContent = timeString;
+        }
+
+        function handleGameEvent(scene, event) {
+            const eventMessages = {
+                'periodic_checkpoint': '⏱️ Checkpoint alcanzado',
+                'storm_incoming': '⚠️ ¡Tormenta aproximándose!',
+                'resource_spawn': `🎁 Recurso apareció: ${event.data.type}`,
+            };
+
+            const message = eventMessages[event.type] || `🎪 ${event.type}`;
+            addEventToLog(message);
+
+            // Efectos visuales según el evento
+            if (event.type === 'storm_incoming') {
+                scene.cameras.main.shake(500, 0.005);
+                scene.cameras.main.flash(1000, 100, 0, 0);
+            }
+        }
+
+        function addEventToLog(message) {
+            const eventList = document.getElementById('eventList');
+            const eventItem = document.createElement('div');
+            eventItem.className = 'event-item';
+            const time = new Date().toLocaleTimeString();
+            eventItem.textContent = `[${time}] ${message}`;
+            eventList.insertBefore(eventItem, eventList.firstChild);
+
+            // Mantener solo últimos 10 eventos
+            while (eventList.children.length > 10) {
+                eventList.removeChild(eventList.lastChild);
+            }
+        }
+    </script>
+</body>
+</html>

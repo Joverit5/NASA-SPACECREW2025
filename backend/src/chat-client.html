@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat SpaceCrew</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0a0a14;
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    h2 {
+      color: #66ccff;
+      margin-bottom: 10px;
+    }
+
+    /* Agregar indicador de estado */
+    #status {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    #status.connected {
+      color: #00ffb3;
+    }
+
+    #status.error {
+      color: #ff4444;
+    }
+
+    #messages {
+      width: 100%;
+      max-width: 500px;
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #333;
+      padding: 10px;
+      background: #1a1a2e;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #0005;
+      margin-bottom: 10px;
+    }
+
+    .message {
+      margin: 6px 0;
+      padding: 4px 8px;
+      border-radius: 4px;
+      word-wrap: break-word;
+    }
+
+    .you {
+      background: #003322;
+      color: #00ffb3;
+    }
+
+    .other {
+      background: #332200;
+      color: #ffcc00;
+    }
+
+    /* Agregar estilos para notificaciones del sistema */
+    .system {
+      color: #888;
+      font-style: italic;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .error {
+      color: #ff4444;
+      background: #331111;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    #input-container {
+      display: flex;
+      gap: 5px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-size: 14px;
+    }
+
+    input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 5px;
+      background: #0077ff;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover:not(:disabled) {
+      background: #005fd1;
+    }
+
+    button:disabled {
+      background: #444;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Chat Spatium 🚀</h2>
+  <!-- Agregar indicador de estado -->
+  <div id="status">Conectando...</div>
+  <div id="messages"></div>
+  <div id="input-container">
+    <input id="input" placeholder="Escribe un mensaje..." disabled />
+    <button id="send" disabled>Enviar</button>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const socket = io("http://localhost:4000");
+    const sessionId = "sala-demo";
+
+    const messagesDiv = document.getElementById("messages");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("send");
+    const statusDiv = document.getElementById("status");
+
+    let playerId = null;
+    let playerName = null;
+    let isConnected = false;
+    let isJoining = false;
+
+    function updateStatus(message, type = 'normal') {
+      statusDiv.textContent = message;
+      statusDiv.className = type;
+    }
+
+    function addSystemMessage(text) {
+      const div = document.createElement("div");
+      div.classList.add("message", "system");
+      div.textContent = text;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function showError(text) {
+      const div = document.createElement("div");
+      div.classList.add("message", "error");
+      div.textContent = `❌ ${text}`;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function promptForName() {
+      const name = prompt("Tu nombre (1-20 caracteres):");
+      if (!name || name.trim().length === 0) {
+        alert("Debes ingresar un nombre válido");
+        return promptForName();
+      }
+      if (name.trim().length > 20) {
+        alert("El nombre debe tener máximo 20 caracteres");
+        return promptForName();
+      }
+      return name.trim();
+    }
+
+    function attemptJoin(name) {
+      if (isJoining) return;
+      isJoining = true;
+      playerName = name;
+      updateStatus(`Conectando como ${playerName}...`, 'normal');
+      socket.emit("join_session", { 
+        sessionId, 
+        player: { name: playerName } 
+      });
+    }
+
+    playerName = promptForName();
+    updateStatus(`Conectando como ${playerName}...`, 'normal');
+
+    // Función que envía el mensaje
+    function sendMessage() {
+      if (!isConnected || !playerId) return;
+      
+      const text = input.value.trim();
+      if (text === "" || text.length > 500) return;
+      
+      socket.emit("chat_message", { sessionId, playerId, text });
+      input.value = "";
+    }
+
+    // Click en botón
+    sendBtn.onclick = sendMessage;
+
+    // Presionar Enter en input
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    socket.on("connect", () => {
+      console.log("Conectado al servidor");
+      attemptJoin(playerName);
+    });
+
+    socket.on("join_success", (data) => {
+      playerId = data.playerId;
+      isConnected = true;
+      isJoining = false;
+      input.disabled = false;
+      sendBtn.disabled = false;
+      updateStatus(`Conectado como ${data.playerName}`, 'connected');
+      
+      const errorMessages = messagesDiv.querySelectorAll('.error');
+      errorMessages.forEach(msg => msg.remove());
+      
+      addSystemMessage(`Te has unido a la sala ${data.sessionId}`);
+    });
+
+    socket.on("join_rejected", (data) => {
+      isJoining = false;
+      showError(data.message);
+      updateStatus(data.message, 'error');
+      
+      // Si la sala está llena, no permitir reintentar
+      if (data.reason === "room_full") {
+        addSystemMessage("No puedes unirte a esta sala en este momento.");
+        input.disabled = true;
+        sendBtn.disabled = true;
+        return;
+      }
+      
+      // Si el nombre está ocupado, pedir otro nombre
+      if (data.reason === "name_taken") {
+        setTimeout(() => {
+          const newName = promptForName();
+          attemptJoin(newName);
+        }, 1000);
+      }
+    });
+
+    socket.on("chat_history", (messages) => {
+      if (messages.length > 0) {
+        addSystemMessage(`--- Historial de mensajes (${messages.length}) ---`);
+        messages.forEach(msg => {
+          const div = document.createElement("div");
+          div.classList.add("message");
+          div.classList.add(msg.playerId === playerId ? "you" : "other");
+          div.textContent = msg.playerId === playerId 
+            ? `[Tú]: ${msg.text}` 
+            : `[${msg.playerName}]: ${msg.text}`;
+          messagesDiv.appendChild(div);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+    });
+
+    socket.on("chat_message_broadcast", (msg) => {
+      const div = document.createElement("div");
+      div.classList.add("message");
+      div.classList.add(msg.playerId === playerId ? "you" : "other");
+      div.textContent = msg.playerId === playerId 
+        ? `[Tú]: ${msg.text}` 
+        : `[${msg.playerName}]: ${msg.text}`;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    socket.on("player_joined", (data) => {
+      addSystemMessage(`${data.name} se ha unido a la sala`);
+    });
+
+    socket.on("player_left", (data) => {
+      addSystemMessage(`${data.name} ha salido de la sala`);
+    });
+
+    socket.on("chat_error", (data) => {
+      showError(data.message);
+      updateStatus(`Error: ${data.message}`, 'error');
+      input.disabled = true;
+      sendBtn.disabled = true;
+      isConnected = false;
+    });
+
+    socket.on("disconnect", () => {
+      updateStatus("Desconectado del servidor", 'error');
+      input.disabled = true;
+      sendBtn.disabled = true;
+      isConnected = false;
+      addSystemMessage("Conexión perdida con el servidor");
+    });
+
+    socket.on("connect_error", (error) => {
+      updateStatus("Error de conexión", 'error');
+      showError("No se pudo conectar al servidor");
+    });
+  </script>
+</body>
+
+</html>
