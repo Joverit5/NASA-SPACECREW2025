@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Send } from "lucide-react"
+import { useRoom } from "@/hooks/use-room"
 import type { ChatMessage } from "@/lib/types"
 
 interface LobbyChatProps {
@@ -14,7 +15,7 @@ interface LobbyChatProps {
   playerId: string
 }
 
-export function LobbyChat({ playerName, playerId }: LobbyChatProps) {
+export function LobbyChat({ sessionId, playerName, playerId }: LobbyChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       playerId: "system",
@@ -26,6 +27,31 @@ export function LobbyChat({ playerName, playerId }: LobbyChatProps) {
   const [inputValue, setInputValue] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  const { sendMessage, getMessages } = useRoom(sessionId)
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const fetchedMessages = await getMessages()
+      console.log("[v0] Fetched messages in LobbyChat:", fetchedMessages.length)
+      if (fetchedMessages.length > 0) {
+        setMessages([
+          {
+            playerId: "system",
+            playerName: "SYSTEM",
+            text: "Welcome to the lobby!",
+            timestamp: Date.now(),
+          },
+          ...fetchedMessages,
+        ])
+      }
+    }
+
+    fetchMessages()
+    const interval = setInterval(fetchMessages, 2000)
+
+    return () => clearInterval(interval)
+  }, [getMessages])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
@@ -34,18 +60,12 @@ export function LobbyChat({ playerName, playerId }: LobbyChatProps) {
     scrollToBottom()
   }, [messages])
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputValue.trim()) return
 
-    const newMessage: ChatMessage = {
-      playerId,
-      playerName,
-      text: inputValue.trim(),
-      timestamp: Date.now(),
-    }
-
-    setMessages((prev) => [...prev, newMessage])
+    console.log("[v0] Sending message:", inputValue.trim())
+    await sendMessage(playerId, playerName, inputValue.trim())
     setInputValue("")
   }
 

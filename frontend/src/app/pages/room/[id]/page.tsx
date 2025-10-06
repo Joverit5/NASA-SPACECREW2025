@@ -1,35 +1,61 @@
 "use client"
 
-import { useState } from "react"
-import { useSearchParams, useParams } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useSearchParams, useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
 import { Copy, Check, Crown, Users, Zap, Terminal } from "lucide-react"
 import { LobbyChat } from "@/components/lobby-chat"
 import { AnimatedSpatium } from "@/components/animated-spatium"
 import { GameLoadingScreen } from "@/components/game-loading-screen"
-import type { Player } from "@/lib/types"
+import { useRoom } from "@/hooks/use-room"
 
 export default function RoomPage() {
+  const router = useRouter()
   const params = useParams()
   const sessionId = params?.id as string
 
   const searchParams = useSearchParams()
   const playerName = searchParams.get("name") || "Anonymous"
-
+  const playerId = searchParams.get("playerId") || ""
   const isCreator = searchParams.get("creator") === "true"
-  const currentPlayerId = "1"
 
-  const [players, setPlayers] = useState<Player[]>([
-    { id: "1", name: playerName, ready: false, hp: 100 },
-  ])
+  const { room, isLoading: roomLoading, error, toggleReady: toggleReadyAPI } = useRoom(sessionId)
+
   const [copied, setCopied] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  console.log("[v0] isCreator:", isCreator)
-  console.log("[v0] allPlayersReady:", players.every((p) => p.ready))
-  console.log("[v0] players.length:", players.length)
-  console.log("[v0] Button should be enabled:", isCreator && players.every((p) => p.ready) && players.length >= 1)
+  useEffect(() => {
+    if (error === "Room not found") {
+      alert("Room not found. Redirecting to lobby...")
+      router.push("/pages/lobby")
+    }
+  }, [error, router])
+
+  useEffect(() => {
+    if (!sessionId || !playerName || isCreator || !room) return
+
+    const isPlayerInRoom = room.players.some((p) => p.name === playerName)
+
+    if (!isPlayerInRoom) {
+      fetch(`/api/rooms/${sessionId}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerName }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.success) {
+            alert(data.error || "Failed to join room")
+            router.push("/pages/lobby")
+          }
+        })
+        .catch(() => {
+          alert("Failed to join room")
+          router.push("/pages/lobby")
+        })
+    }
+  }, [sessionId, playerName, isCreator, room, router])
 
   const copySessionCode = () => {
     navigator.clipboard.writeText(sessionId)
@@ -38,22 +64,38 @@ export default function RoomPage() {
   }
 
   const toggleReady = () => {
-    setPlayers((prev) => prev.map((p) => (p.id === currentPlayerId ? { ...p, ready: !p.ready } : p)))
+    if (!playerId) return
+    toggleReadyAPI(playerId)
   }
 
   const startGame = () => {
-    console.log("[v0] startGame called")
     setIsLoading(true)
     setTimeout(() => {
-      console.log("[v0] Starting mission...")
       setTimeout(() => {
         setIsLoading(false)
       }, 7000)
     }, 500)
   }
 
-  const currentPlayer = players.find((p) => p.id === currentPlayerId)
-  const allPlayersReady = players.every((p) => p.ready)
+  const handleStartGame = () => {
+    startGame()
+  }
+
+  if (roomLoading || !room) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a] text-blue-300 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-2xl font-bold text-cyan-400 mb-4">{">"} CONNECTING...</div>
+          <div className="text-blue-400">Please wait while we connect you to the mission</div>
+        </div>
+      </div>
+    )
+  }
+
+  const currentPlayer = room.players.find((p) => p.id === playerId || p.name === playerName)
+  const allPlayersReady = room.players.every((p) => p.ready)
+  const isRoomCreator = room.creatorId === (playerId || currentPlayer?.id)
+  const isConnected = true // Always connected with API polling
 
   if (isLoading) {
     return <GameLoadingScreen />
@@ -117,23 +159,29 @@ export default function RoomPage() {
               <div className="space-y-3 text-sm font-[family-name:var(--font-pixel)]">
                 <div className="flex justify-between">
                   <span className="text-blue-300">{">"} SYS:</span>
-                  <span className="text-green-400 font-bold animate-pulse retro-glow">ON</span>
+                  <span
+                    className={`font-bold ${isConnected ? "text-green-400 animate-pulse retro-glow" : "text-red-400"}`}
+                  >
+                    {isConnected ? "ON" : "OFF"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-blue-300">{">"} PLY:</span>
-                  <span className="text-cyan-400 font-bold">{players.length}/5</span>
+                  <span className="text-cyan-400 font-bold">
+                    {room.players.length}/{room.maxPlayers}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-blue-300">{">"} RDY:</span>
                   <span className="text-purple-400 font-bold">
-                    {players.filter((p) => p.ready).length}/{players.length}
+                    {room.players.filter((p) => p.ready).length}/{room.players.length}
                   </span>
                 </div>
               </div>
             </div>
 
             <div className="border-4 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-4 shadow-[0_0_15px_rgba(96,165,250,0.3)] hidden lg:block pixel-corners h-[400px] scanlines crt-noise">
-              <LobbyChat sessionId={sessionId} playerName={playerName} playerId={currentPlayerId} />
+              <LobbyChat sessionId={sessionId} playerName={playerName} playerId={currentPlayer?.id || playerId} />
             </div>
 
             <div className="border-4 border-purple-400/50 bg-slate-900/80 backdrop-blur-[2px] p-4 shadow-[0_0_15px_rgba(168,139,250,0.2)] pixel-corners scanlines">
@@ -159,14 +207,14 @@ export default function RoomPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {players.map((player, index) => (
+                {room.players.map((player, index) => (
                   <div
                     key={player.id}
                     className="border-4 border-blue-400/50 bg-slate-800/80 p-4 hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)] pixel-corners scanlines pixel-shadow"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        {index === 0 && isCreator && (
+                        {player.id === room.creatorId && (
                           <Crown className="w-5 h-5 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)] animate-pulse" />
                         )}
                         <div className="w-10 h-10 border-4 border-cyan-400 bg-slate-900 flex items-center justify-center text-lg font-bold text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)] font-[family-name:var(--font-pixel)] pixel-shadow">
@@ -204,7 +252,7 @@ export default function RoomPage() {
                   </div>
                 ))}
 
-                {Array.from({ length: 5 - players.length }).map((_, i) => (
+                {Array.from({ length: room.maxPlayers - room.players.length }).map((_, i) => (
                   <div
                     key={`empty-${i}`}
                     className="border-4 border-dashed border-blue-400/30 bg-slate-900/50 p-4 flex items-center justify-center pixel-corners scanlines"
@@ -221,6 +269,7 @@ export default function RoomPage() {
                 <Button
                   onClick={toggleReady}
                   size="lg"
+                  disabled={!isConnected}
                   className={
                     currentPlayer?.ready
                       ? "bg-slate-700 text-blue-400 hover:bg-slate-600 font-[family-name:var(--font-pixel)] font-bold border-4 border-blue-400 text-sm h-16 arcade-button pixel-shadow"
@@ -232,16 +281,18 @@ export default function RoomPage() {
                 </Button>
 
                 <Button
-                  onClick={startGame}
-                  disabled={!allPlayersReady || players.length < 1}
+                  onClick={handleStartGame}
+                  disabled={!isRoomCreator || !allPlayersReady || room.players.length < 1 || !isConnected}
                   size="lg"
                   className="bg-cyan-400 text-slate-900 hover:bg-cyan-300 font-[family-name:var(--font-pixel)] font-bold border-4 border-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.5)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none text-sm h-16 arcade-button pixel-shadow"
                   title={
-                    !allPlayersReady
-                      ? "All players must be ready"
-                      : players.length < 1
-                        ? "Need at least 1 player"
-                        : "Click to launch mission!"
+                    !isRoomCreator
+                      ? "Only the room creator can start the game"
+                      : !allPlayersReady
+                        ? "All players must be ready"
+                        : room.players.length < 1
+                          ? "Need at least 1 player"
+                          : "Click to launch mission!"
                   }
                 >
                   <Terminal className="w-5 h-5 mr-2" />
@@ -265,7 +316,7 @@ export default function RoomPage() {
 
         <div className="lg:hidden mb-6">
           <div className="border-4 border-blue-400/50 bg-slate-900/80 backdrop-blur-[2px] p-4 shadow-[0_0_20px_rgba(96,165,250,0.3)] pixel-corners h-[300px] scanlines crt-noise">
-            <LobbyChat sessionId={sessionId} playerName={playerName} playerId={currentPlayerId} />
+            <LobbyChat sessionId={sessionId} playerName={playerName} playerId={currentPlayer?.id || playerId} />
           </div>
         </div>
 
@@ -273,8 +324,12 @@ export default function RoomPage() {
           <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-[family-name:var(--font-pixel)]">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]"></div>
-                <span className="text-green-400 font-bold">ONLINE</span>
+                <div
+                  className={`w-2 h-2 ${isConnected ? "bg-green-400 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" : "bg-red-400"}`}
+                ></div>
+                <span className={`font-bold ${isConnected ? "text-green-400" : "text-red-400"}`}>
+                  {isConnected ? "ONLINE" : "OFFLINE"}
+                </span>
               </div>
               <div className="text-blue-400/50">|</div>
               <div className="text-blue-300">

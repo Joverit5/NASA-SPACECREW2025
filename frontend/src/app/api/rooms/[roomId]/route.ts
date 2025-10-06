@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { getRoom } from "@/lib/room-store"
 
-export async function GET(request: Request, { params }: { params: { roomId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ roomId: string }> }) {
   try {
-    const roomId = params.roomId
+    const { roomId } = await params
 
     const room = await getRoom(roomId)
 
@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: { roomId: stri
 
     return NextResponse.json({ room })
   } catch (error) {
-    console.error("[v0] Error getting room:", error)
+    console.error("Error getting room:", error)
     return NextResponse.json({ error: "Failed to get room" }, { status: 500 })
   }
 }

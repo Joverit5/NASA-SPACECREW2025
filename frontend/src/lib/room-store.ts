@@ -1,25 +1,58 @@
 import type { Room, Player, ChatMessage } from "./types"
-import initialRoomsData from "../data/rooms.json"
 
 interface RoomData {
   rooms: Record<string, Room>
   messages: Record<string, ChatMessage[]>
 }
 
-let inMemoryData: RoomData = {
-  rooms: { ...initialRoomsData.rooms },
-  messages: { ...initialRoomsData.messages },
+declare global {
+  var roomStore: RoomData | undefined
+  var roomStoreInitialized: boolean | undefined
 }
 
+function getGlobalStore(): RoomData {
+  if (!globalThis.roomStore) {
+    globalThis.roomStore = {
+      rooms: {},
+      messages: {},
+    }
+  }
+  return globalThis.roomStore
+}
+
+async function initializeData() {
+  if (globalThis.roomStoreInitialized) {
+    return
+  }
+
+  try {
+    const initialData = await import("../data/rooms.json")
+    const loadedRooms = initialData.default?.rooms || initialData.rooms || {}
+    const loadedMessages = initialData.default?.messages || initialData.messages || {}
+
+    const store = getGlobalStore()
+    Object.assign(store.rooms, loadedRooms)
+    Object.assign(store.messages, loadedMessages)
+
+    globalThis.roomStoreInitialized = true
+  } catch (error) {
+    console.error("Error loading initial data:", error)
+    globalThis.roomStoreInitialized = true
+  }
+}
+
+// Inicializar inmediatamente
+initializeData()
+
 async function readData(): Promise<RoomData> {
-  console.log("[v0] readData - rooms found:", Object.keys(inMemoryData.rooms || {}))
-  console.log("[v0] readData - full data:", JSON.stringify(inMemoryData, null, 2))
-  return inMemoryData
+  if (!globalThis.roomStoreInitialized) {
+    await initializeData()
+  }
+  return getGlobalStore()
 }
 
 async function writeData(data: RoomData): Promise<void> {
-  inMemoryData = data
-  console.log("[v0] writeData - data updated in memory")
+  // No hacer nada, los cambios ya están en globalThis.roomStore
 }
 
 export function generateRoomId(): string {
@@ -28,14 +61,12 @@ export function generateRoomId(): string {
   for (let i = 0; i < 6; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
-  console.log("[v0] Generated room ID:", result)
   return result
 }
 
 export async function createRoom(playerName: string): Promise<{ roomId: string; player: Player }> {
-  console.log("[v0] createRoom called with playerName:", playerName)
-
   const data = await readData()
+
   const roomId = generateRoomId()
   const playerId = `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
@@ -55,9 +86,7 @@ export async function createRoom(playerName: string): Promise<{ roomId: string; 
 
   data.rooms[roomId] = room
   data.messages[roomId] = []
-  await writeData(data)
 
-  console.log("[v0] Room created and saved to JSON:", { roomId, playerId, playerCount: room.players.length })
   return { roomId, player }
 }
 
@@ -70,22 +99,14 @@ export async function joinRoom(
   roomId: string,
   playerName: string,
 ): Promise<{ success: boolean; player?: Player; error?: string }> {
-  console.log("[v0] joinRoom called with roomId:", roomId, "playerName:", playerName)
-
   const data = await readData()
-  console.log("[v0] Available rooms:", Object.keys(data.rooms))
-  console.log("[v0] Looking for room:", roomId, "in data.rooms")
-  console.log("[v0] data.rooms[roomId]:", data.rooms[roomId])
-
   const room = data.rooms[roomId]
 
   if (!room) {
-    console.log("[v0] Room not found:", roomId)
     return { success: false, error: "Room not found" }
   }
 
   if (room.players.length >= room.maxPlayers) {
-    console.log("[v0] Room is full:", roomId, "players:", room.players.length)
     return { success: false, error: "Room is full" }
   }
 
@@ -99,10 +120,8 @@ export async function joinRoom(
   }
 
   room.players.push(player)
-  data.rooms[roomId] = room
   await writeData(data)
 
-  console.log("[v0] Player joined successfully:", playerId, "Room now has", room.players.length, "players")
   return { success: true, player }
 }
 
@@ -114,7 +133,6 @@ export async function togglePlayerReady(roomId: string, playerId: string): Promi
   const player = room.players.find((p) => p.id === playerId)
   if (player) {
     player.ready = !player.ready
-    data.rooms[roomId] = room
     await writeData(data)
   }
 
@@ -135,7 +153,6 @@ export async function removePlayer(roomId: string, playerId: string): Promise<Ro
     return undefined
   }
 
-  data.rooms[roomId] = room
   await writeData(data)
   return room
 }
@@ -146,10 +163,14 @@ export async function addMessage(roomId: string, message: ChatMessage): Promise<
     data.messages[roomId] = []
   }
   data.messages[roomId].push(message)
+  console.log("[v0] Message added to room", roomId, "Total messages:", data.messages[roomId].length)
+  console.log("[v0] Message content:", message)
   await writeData(data)
 }
 
 export async function getMessages(roomId: string): Promise<ChatMessage[]> {
   const data = await readData()
-  return data.messages[roomId] || []
+  const messages = data.messages[roomId] || []
+  console.log("[v0] Getting messages for room", roomId, "Found:", messages.length)
+  return messages
 }
