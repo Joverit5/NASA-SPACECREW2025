@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { joinRoom } from "@/lib/room-store"
 
-export async function POST(request: Request, { params }: { params: { roomId: string } }) {
+export async function POST(
+  request: NextRequest,
+  context: { params: { roomId: string } }
+) {
   try {
-    const roomId = params.roomId
+    const { roomId } = context.params
     console.log("[v0] Join room request for roomId:", roomId)
 
     const { playerName } = await request.json()
