@@ -5,7 +5,7 @@ export async function GET(request: Request, { params }: { params: { roomId: stri
   try {
     const roomId = params.roomId
 
-    const room = getRoom(roomId)
+    const room = await getRoom(roomId)
 
     if (!room) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 })

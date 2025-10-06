@@ -1,34 +1,25 @@
 import type { Room, Player, ChatMessage } from "./types"
-import { promises as fs } from "fs"
-import path from "path"
-
-const DATA_FILE = path.join(process.cwd(), "data", "rooms.json")
+import initialRoomsData from "../data/rooms.json"
 
 interface RoomData {
   rooms: Record<string, Room>
   messages: Record<string, ChatMessage[]>
 }
 
-async function ensureDataFile(): Promise<void> {
-  try {
-    await fs.access(DATA_FILE)
-  } catch {
-    const dataDir = path.dirname(DATA_FILE)
-    await fs.mkdir(dataDir, { recursive: true })
-    const initialData: RoomData = { rooms: {}, messages: {} }
-    await fs.writeFile(DATA_FILE, JSON.stringify(initialData, null, 2))
-  }
+let inMemoryData: RoomData = {
+  rooms: { ...initialRoomsData.rooms },
+  messages: { ...initialRoomsData.messages },
 }
 
 async function readData(): Promise<RoomData> {
-  await ensureDataFile()
-  const content = await fs.readFile(DATA_FILE, "utf-8")
-  return JSON.parse(content)
+  console.log("[v0] readData - rooms found:", Object.keys(inMemoryData.rooms || {}))
+  console.log("[v0] readData - full data:", JSON.stringify(inMemoryData, null, 2))
+  return inMemoryData
 }
 
 async function writeData(data: RoomData): Promise<void> {
-  await ensureDataFile()
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2))
+  inMemoryData = data
+  console.log("[v0] writeData - data updated in memory")
 }
 
 export function generateRoomId(): string {
@@ -79,14 +70,22 @@ export async function joinRoom(
   roomId: string,
   playerName: string,
 ): Promise<{ success: boolean; player?: Player; error?: string }> {
+  console.log("[v0] joinRoom called with roomId:", roomId, "playerName:", playerName)
+
   const data = await readData()
+  console.log("[v0] Available rooms:", Object.keys(data.rooms))
+  console.log("[v0] Looking for room:", roomId, "in data.rooms")
+  console.log("[v0] data.rooms[roomId]:", data.rooms[roomId])
+
   const room = data.rooms[roomId]
 
   if (!room) {
+    console.log("[v0] Room not found:", roomId)
     return { success: false, error: "Room not found" }
   }
 
   if (room.players.length >= room.maxPlayers) {
+    console.log("[v0] Room is full:", roomId, "players:", room.players.length)
     return { success: false, error: "Room is full" }
   }
 
@@ -103,6 +102,7 @@ export async function joinRoom(
   data.rooms[roomId] = room
   await writeData(data)
 
+  console.log("[v0] Player joined successfully:", playerId, "Room now has", room.players.length, "players")
   return { success: true, player }
 }
 
