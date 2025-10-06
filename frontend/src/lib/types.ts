@@ -1,5 +1,5 @@
 /**
- * Type definitions for Tonoteam MVP
+ * Type definitions for NASA Space Crew 2025
  */
 
 export interface Player {
@@ -53,9 +53,39 @@ export interface GameSession {
   status: "lobby" | "designing" | "simulating" | "completed"
 }
 
+export interface Room {
+  id: string
+  players: Player[]
+  creatorId: string
+  maxPlayers: number
+}
+
 export interface ChatMessage {
   playerId: string
   playerName: string
   text: string
   timestamp: number
+}
+
+export interface ServerToClientEvents {
+  "room:joined": (data: { session: GameSession; player: Player }) => void
+  "room:updated": (session: GameSession) => void
+  "player:joined": (player: Player) => void
+  "player:left": (playerId: string) => void
+  "player:ready": (data: { playerId: string; ready: boolean }) => void
+  "game:started": () => void
+  "chat:message": (message: ChatMessage) => void
+  error: (message: string) => void
+}
+
+export interface ClientToServerEvents {
+  "room:create": (data: { playerName: string }, callback: (sessionId: string) => void) => void
+  "room:join": (
+    data: { sessionId: string; playerName: string },
+    callback: (success: boolean, error?: string) => void,
+  ) => void
+  "room:leave": () => void
+  "player:toggle-ready": () => void
+  "game:start": () => void
+  "chat:send": (message: string) => void
 }
