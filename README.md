@@ -287,19 +287,19 @@ We would like to express our gratitude to:
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [contributors-shield]: https://img.shields.io/github/contributors/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
-[contributors-url]: https://github.com/your-username/SPATIUM/graphs/contributors
+[contributors-url]: https://github.com/Joverit5/NASA-SPATIUM/graphs/contributors
 
 [forks-shield]: https://img.shields.io/github/forks/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
-[forks-url]: https://github.com/your-username/SPATIUM/network/members
+[forks-url]: https://github.com/Joverit5/NASA-SPATIUM/network/members
 
 [stars-shield]: https://img.shields.io/github/stars/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
-[stars-url]: https://github.com/your-username/SPATIUM/stargazers
+[stars-url]: https://github.com/Joverit5/NASA-SPATIUM/stargazers
 
 [issues-shield]: https://img.shields.io/github/issues/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
-[issues-url]: https://github.com/your-username/SPATIUM/issues
+[issues-url]: https://github.com/Joverit5/NASA-SPATIUM/issues
 
 [license-shield]: https://img.shields.io/github/license/Joverit5/NASA-SPATIUM.svg?style=for-the-badge
-[license-url]: https://github.com/Joverit5/SPATIUM/main/license.txt
+[license-url]: https://github.com/Joverit5/NASA-SPATIUM//blob/master/LICENSE.txt
 
 [product-screenshot]: images/screenshot.png
 
