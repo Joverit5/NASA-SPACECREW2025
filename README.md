@@ -75,7 +75,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]
+![Product Name Screen Shot][product-screenshot]
 
 SPATIUM is a multiplayer real-time strategy game where players cooperate to manage resources, overcome random events, and build a thriving space colony. The game features an in-game currency system and aims to provide a challenging and engaging cooperative experience.
 
