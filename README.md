@@ -21,7 +21,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/Joverit5/NASA-SPATIUM">
-    <img src="images/icon2.png" alt="Logo" width="80" height="80">
+    <img src="images/astronomy.png" alt="Logo" width="80" height="80">
   </a>
 
 <h3 align="center">SPATIUM</h3>
