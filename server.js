@@ -1,220 +1,175 @@
-const express = require("express")
-const http = require("http")
-const socketIO = require("socket.io")
-const path = require("path")
+import express from "express"
+import { createServer } from "http"
+import { Server } from "socket.io"
+import path from "path"
+import { GameService } from "./services/game.service"
 
 const app = express()
-const server = http.createServer(app)
-const io = socketIO(server)
-
-const PORT = 8080
-
-// Middleware
-app.use(express.json())
-app.use(express.static(path.join(__dirname, "public")))
-
-// In-memory session storage
-const sessions = new Map()
-
-// REST API endpoints
-app.post("/api/session", (req, res) => {
-  const { name, maxPlayers } = req.body
-  const sessionId = "s" + Date.now()
-
-  sessions.set(sessionId, {
-    id: sessionId,
-    name: name || "Unnamed Session",
-    maxPlayers: maxPlayers || 5,
-    players: [],
-    areas: [],
-    map: {
-      width: 20,
-      height: 20,
-      tiles: Array.from({ length: 20 }, () => Array(20).fill(0)),
-    },
-    resources: {
-      oxygen: 100,
-      power: 100,
-      water: 100,
-    },
-  })
-
-  console.log(`[API] Created session: ${sessionId}`)
-  res.json({ sessionId })
+const httpServer = createServer(app)
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
 })
 
-app.post("/api/session/:id/join", (req, res) => {
-  const { id } = req.params
-  const { displayName } = req.body
+const gameService = new GameService()
+gameService.setIoInstance(io)
 
-  const session = sessions.get(id)
-  if (!session) {
-    return res.status(404).json({ error: "Session not found" })
-  }
-
-  const playerId = "p" + Date.now()
-  session.players.push({
-    id: playerId,
-    name: displayName || "Player",
-    role: "crew_medic",
-  })
-
-  console.log(`[API] Player ${playerId} joined session ${id}`)
-  res.json({ playerId, sessionId: id })
-})
-
-app.get("/api/session/:id", (req, res) => {
-  const { id } = req.params
-  const session = sessions.get(id)
-
-  if (!session) {
-    return res.status(404).json({ error: "Session not found" })
-  }
-
-  res.json(session)
-})
+// Serve static files
+app.use(express.static(path.join(__dirname, "../public")))
 
 // Socket.IO connection handling
 io.on("connection", (socket) => {
-  console.log(`[Socket] Client connected: ${socket.id}`)
+  console.log(`Player connected: ${socket.id}`)
 
-  socket.on("join_session", (data) => {
-    const { sessionId, player } = data
-    console.log(`[Socket] join_session: ${sessionId} by ${player?.id}`)
+  // Create or join session
+  socket.on("create_session", ({ sessionId, playerName }) => {
+    const session = gameService.createSession(sessionId, socket.id, playerName)
+    socket.join(sessionId)
 
-    const session = sessions.get(sessionId)
-    if (session) {
-      socket.join(sessionId)
-      socket.emit("session_state", session)
-      socket.to(sessionId).emit("player_joined", player)
+    socket.emit("join_success", {
+      sessionId,
+      playerId: socket.id,
+      playerName,
+      isHost: true,
+      player: Array.from(session.players.values()).find((p) => p.id === socket.id),
+      sessionState: gameService.getSessionState(sessionId),
+    })
+
+    console.log(`Session created: ${sessionId} by ${playerName}`)
+  })
+
+  socket.on("join_session", ({ sessionId, player }) => {
+    const result = gameService.joinSession(sessionId, socket.id, player.name)
+
+    if (!result.success) {
+      socket.emit("join_rejected", {
+        message:
+          result.reason === "room_full"
+            ? "Room is full (max 5 players)"
+            : result.reason === "name_taken"
+              ? "Name already taken"
+              : result.reason === "session_not_found"
+                ? "Session not found"
+                : "Cannot join session",
+        reason: result.reason,
+      })
+      return
+    }
+
+    socket.join(sessionId)
+
+    const sessionState = gameService.getSessionState(sessionId)
+
+    socket.emit("join_success", {
+      sessionId,
+      playerId: socket.id,
+      playerName: player.name,
+      isHost: result.player?.isHost || false,
+      player: result.player,
+      sessionState,
+    })
+
+    socket.to(sessionId).emit("player_joined", {
+      player: result.player,
+      sessionState, // Include full state for sync
+    })
+
+    // Send chat history
+    if (sessionState?.chatHistory) {
+      socket.emit("chat_history", sessionState.chatHistory)
+    }
+
+    console.log(`Player ${player.name} joined session ${sessionId}`)
+  })
+
+  // Area management
+  socket.on("place_area", ({ sessionId, area }) => {
+    const result = gameService.placeArea(sessionId, socket.id, area)
+
+    if (result.success && result.area) {
+      io.to(sessionId).emit("area_placed", { area: result.area })
     } else {
-      socket.emit("place_error", { reason: "session_not_found", sessionId })
+      socket.emit("place_error", { reason: "not_host" })
     }
   })
 
-  socket.on("get_session", (data) => {
-    const { sessionId } = data
-    console.log(`[Socket] get_session: ${sessionId}`)
+  socket.on("update_area", ({ sessionId, areaId, updates }) => {
+    const success = gameService.updateArea(sessionId, socket.id, areaId, updates)
 
-    const session = sessions.get(sessionId)
-    if (session) {
-      socket.emit("session_state", session)
-    } else {
-      socket.emit("place_error", { reason: "session_not_found", sessionId })
+    if (success) {
+      io.to(sessionId).emit("area_updated", { areaId, updates })
     }
   })
 
-  socket.on("place_area", (data) => {
-    const { sessionId, area } = data
-    console.log(`[Socket] place_area in ${sessionId}:`, area)
+  socket.on("remove_area", ({ sessionId, areaId }) => {
+    const success = gameService.removeArea(sessionId, socket.id, areaId)
 
-    const session = sessions.get(sessionId)
-    if (!session) {
-      socket.emit("place_error", { reason: "session_not_found", sessionId })
-      return
+    if (success) {
+      io.to(sessionId).emit("area_removed", { areaId })
     }
-
-    // Add area to session
-    session.areas.push(area)
-
-    // Update map tiles
-    for (let y = 0; y < area.h; y++) {
-      for (let x = 0; x < area.w; x++) {
-        const tileX = area.x + x
-        const tileY = area.y + y
-        if (tileY >= 0 && tileY < 20 && tileX >= 0 && tileX < 20) {
-          session.map.tiles[tileY][tileX] = area.id
-        }
-      }
-    }
-
-    // Broadcast to all clients in the session
-    io.to(sessionId).emit("session_state", session)
   })
 
-  socket.on("update_area", (data) => {
-    const { sessionId, area } = data
-    console.log(`[Socket] update_area in ${sessionId}:`, area)
+  // Player movement
+  socket.on("player_move", ({ sessionId, x, y, direction }) => {
+    const success = gameService.updatePlayerPosition(sessionId, socket.id, x, y, direction)
 
-    const session = sessions.get(sessionId)
-    if (!session) {
-      socket.emit("place_error", { reason: "session_not_found", sessionId })
-      return
+    if (success) {
+      socket.to(sessionId).emit("player_moved", {
+        playerId: socket.id,
+        x,
+        y,
+        direction,
+      })
     }
-
-    // Find and update the area
-    const index = session.areas.findIndex((a) => a.id === area.id)
-    if (index !== -1) {
-      // Clear old tiles
-      const oldArea = session.areas[index]
-      for (let y = 0; y < oldArea.h; y++) {
-        for (let x = 0; x < oldArea.w; x++) {
-          const tileX = oldArea.x + x
-          const tileY = oldArea.y + y
-          if (tileY >= 0 && tileY < 20 && tileX >= 0 && tileX < 20) {
-            session.map.tiles[tileY][tileX] = 0
-          }
-        }
-      }
-
-      // Update area
-      session.areas[index] = area
-
-      // Set new tiles
-      for (let y = 0; y < area.h; y++) {
-        for (let x = 0; x < area.w; x++) {
-          const tileX = area.x + x
-          const tileY = area.y + y
-          if (tileY >= 0 && tileY < 20 && tileX >= 0 && tileX < 20) {
-            session.map.tiles[tileY][tileX] = area.id
-          }
-        }
-      }
-    }
-
-    // Broadcast to all clients
-    io.to(sessionId).emit("session_state", session)
   })
 
-  socket.on("remove_area", (data) => {
-    const { sessionId, areaId } = data
-    console.log(`[Socket] remove_area in ${sessionId}: ${areaId}`)
+  // Chat
+  socket.on("chat_message", ({ sessionId, text }) => {
+    const result = gameService.addChatMessage(sessionId, socket.id, text)
 
-    const session = sessions.get(sessionId)
-    if (!session) {
-      socket.emit("place_error", { reason: "session_not_found", sessionId })
-      return
+    if (result.success && result.message) {
+      io.to(sessionId).emit("chat_message_broadcast", result.message)
     }
-
-    // Find and remove the area
-    const index = session.areas.findIndex((a) => a.id === areaId)
-    if (index !== -1) {
-      const area = session.areas[index]
-
-      // Clear tiles
-      for (let y = 0; y < area.h; y++) {
-        for (let x = 0; x < area.w; x++) {
-          const tileX = area.x + x
-          const tileY = area.y + y
-          if (tileY >= 0 && tileY < 20 && tileX >= 0 && tileX < 20) {
-            session.map.tiles[tileY][tileX] = 0
-          }
-        }
-      }
-
-      session.areas.splice(index, 1)
-    }
-
-    // Broadcast to all clients
-    io.to(sessionId).emit("session_state", session)
   })
 
+  // Mission start
+  socket.on("start_mission", ({ sessionId }) => {
+    const success = gameService.startMission(sessionId, socket.id)
+
+    if (success) {
+      io.to(sessionId).emit("mission_started", {
+        timestamp: Date.now(),
+      })
+    }
+  })
+
+  // Disconnect
   socket.on("disconnect", () => {
-    console.log(`[Socket] Client disconnected: ${socket.id}`)
+    // Find and remove player from all sessions
+    const rooms = Array.from(socket.rooms).filter((room) => room !== socket.id)
+
+    rooms.forEach((sessionId) => {
+      const session = gameService.getSession(sessionId)
+      if (session) {
+        const player = session.players.get(socket.id)
+        if (player) {
+          gameService.removePlayer(sessionId, socket.id)
+          socket.to(sessionId).emit("player_left", {
+            playerId: socket.id,
+            playerName: player.name,
+          })
+        }
+      }
+    })
+
+    console.log(`Player disconnected: ${socket.id}`)
   })
 })
 
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}/`)
-  console.log(`Socket.IO enabled`)
+const PORT = process.env.PORT || 4000
+
+httpServer.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
 })
