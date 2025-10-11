@@ -20,17 +20,17 @@ function checkAllDependencies() {
   
   return { allReady, deps };
 }
-let simulationStarted = false
+
+// ========== CRITICAL: Must be false at start ==========
+let simulationStarted = false;
 
 // --------- CONFIG & GLOBALS ----------
 const ROLE = "crew" // Will be set by multiplayer system
 const BASE_PATH = `/assets/crew/crew_assets/crew_medic/` // Default, will be updated
 const META_PATH = BASE_PATH + "metadata.json"
 
-const TILE_W = 32,
-  TILE_H = 32
-const ISO_TILE_W = 64,
-  ISO_TILE_H = 32
+const TILE_W = 32, TILE_H = 32
+const ISO_TILE_W = 64, ISO_TILE_H = 32
 const SPRITE_SCALE = 1
 const DEV_AUTO_RECREATE_ON_MISSING = true
 
@@ -38,12 +38,10 @@ let SESSION_ID = null
 let PLAYER_ID = null
 let sessionReady = false
 
-let game = null,
-  playerSprite = null,
-  ghostRect = null
+let game = null, playerSprite = null, ghostRect = null
 const isIsometricMode = false
 window.isIsometricMode = false
-let isEditMode = true // Flag para controlar si estamos en modo ediciÃ³n
+let isEditMode = true // Flag para controlar si estamos en modo edición
 
 const otherPlayers = new Map() // Track other players' sprites
 let isHost = false // Track if current player is host
@@ -61,8 +59,7 @@ const cameraOffsetY = 0
 const CAMERA_LERP_SPEED = 0.08 // Smooth camera follow speed (0-1, lower = smoother)
 
 const areasById = new Map()
-const undoStack = [],
-  redoStack = []
+const undoStack = [], redoStack = []
 const MAX_UNDO = 200
 const removedSet = new Set() // for undo+server sync
 let allowedGrid = null // boolean grid loaded from /assets/maps/map_grid.json
@@ -70,8 +67,7 @@ let allowedGrid = null // boolean grid loaded from /assets/maps/map_grid.json
 // GRID config & origin for centering/scaling map
 const GRID_COLS = 20
 const GRID_ROWS = 20
-let GRID_ORIGIN_X = 0,
-  GRID_ORIGIN_Y = 0
+let GRID_ORIGIN_X = 0, GRID_ORIGIN_Y = 0
 
 // dev debug flags
 window.DEV_BYPASS_CLIENT_PLACE = false
@@ -140,7 +136,6 @@ function isCellAllowed(tx, ty) {
   if (tx < 0 || ty < 0 || tx >= GRID_COLS || ty >= GRID_ROWS) return false
 
   // Map game grid coordinates (20x20) to allowedGrid coordinates (128x128)
-  // Each game tile corresponds to multiple allowedGrid cells
   const cellsPerTileX = agCols / GRID_COLS
   const cellsPerTileY = agRows / GRID_ROWS
 
@@ -155,11 +150,8 @@ function isCellAllowed(tx, ty) {
   return !!allowedGrid[cy][cx]
 }
 
-// --------- SESSION REST helpers (dev) ----------
-// Removed: createSessionREST, joinSessionREST, createAndJoinSession, waitSocketConnect, ensureDevSession
-
 // --------- SOCKET initialization (safe) ----------
-const io = window.io // Declare the io variable here
+const io = window.io
 if (typeof io !== "undefined") {
   try {
     window.socket = io()
@@ -177,8 +169,6 @@ if (typeof io !== "undefined") {
 
 // --------- SOCKET handlers (safe checks) ----------
 if (window.socket && typeof window.socket.on === "function") {
-  // Socket handlers are already set up in HTML, just add game-specific ones
-
   window.socket.on("session_state", (st) => {
     appendLog("session_state received")
     if (!st) return
@@ -229,7 +219,7 @@ if (window.socket && typeof window.socket.on === "function") {
     }
 
     if (st.missionStarted && !simulationStarted) {
-      appendLog("ðŸš€ Mission started!")
+      appendLog("🚀 Mission started!")
       startIsometricTransition()
     }
 
@@ -243,14 +233,19 @@ if (window.socket && typeof window.socket.on === "function") {
   })
 
   window.socket.on("mission_started", (data) => {
-    appendLog("ðŸš€ Mission started!")
+    appendLog("🚀 Mission started!")
+    console.log("[Socket] mission_started event received:", data);
+    
     if (!simulationStarted) {
-      startIsometricTransition()
+      console.log("[Socket] Calling startIsometricTransition...");
+      startIsometricTransition();
+    } else {
+      console.log("[Socket] Mission already started, skipping transition");
     }
   })
 
   window.socket.on("player_joined", (data) => {
-    appendLog(`ðŸ‘¤ ${data.player?.name} (${data.player?.role}) joined`)
+    appendLog(`👤 ${data.player?.name} (${data.player?.role}) joined`)
 
     if (data.sessionState && data.sessionState.areas) {
       const scene = game?.scene?.scenes[0]
@@ -269,7 +264,7 @@ if (window.socket && typeof window.socket.on === "function") {
   })
 
   window.socket.on("player_left", (data) => {
-    appendLog(`ðŸ‘‹ ${data.name} left`)
+    appendLog(`👋 ${data.name} left`)
     removeOtherPlayerSprite(data.id)
   })
 
@@ -280,7 +275,7 @@ if (window.socket && typeof window.socket.on === "function") {
   })
 
   window.socket.on("chat_message", (data) => {
-    appendLog(`ðŸ’¬ ${data.playerName}: ${data.message}`)
+    appendLog(`💬 ${data.playerName}: ${data.message}`)
     if (window.chatSystem) {
       window.chatSystem.addMessage(data.playerName, data.message)
     }
@@ -293,10 +288,9 @@ if (window.socket && typeof window.socket.on === "function") {
       localStorage.removeItem("DEV_PLAYER_ID")
       SESSION_ID = null
       PLAYER_ID = null
-      // removed ensureDevSession() call here
     } else if (err && err.reason === "not_host") {
-      appendLog("âš ï¸ Solo el host puede editar el mapa")
-      alert("Solo el host puede colocar o mover Ã¡reas")
+      appendLog("⚠️ Solo el host puede editar el mapa")
+      alert("Solo el host puede colocar o mover áreas")
     }
   })
 
@@ -305,9 +299,8 @@ if (window.socket && typeof window.socket.on === "function") {
     const scene = game?.scene?.scenes[0]
     if (!scene) return
 
-    // Only create if we don't already have it
     if (!areasById.has(data.area.id)) {
-      appendLog(`ðŸ“¦ Area placed: ${data.area.type} at (${data.area.x}, ${data.area.y})`)
+      appendLog(`📦 Area placed: ${data.area.type} at (${data.area.x}, ${data.area.y})`)
       createAreaVisual(scene, data.area, false)
     }
   })
@@ -318,18 +311,15 @@ if (window.socket && typeof window.socket.on === "function") {
     const entry = areasById.get(data.areaId)
     if (!entry) return
 
-    appendLog(`ðŸ”„ Area updated: ${data.areaId}`)
+    appendLog(`🔄 Area updated: ${data.areaId}`)
 
-    // Update meta
     Object.assign(entry.meta, data.updates)
 
-    // Update visual position
     if (data.updates.x !== undefined || data.updates.y !== undefined) {
       entry.container.x = GRID_ORIGIN_X + entry.meta.x * TILE_W
       entry.container.y = GRID_ORIGIN_Y + entry.meta.y * TILE_H
     }
 
-    // Update board
     clearAreaTiles(entry.meta)
     fillAreaTiles(entry.meta, data.areaId)
   })
@@ -340,7 +330,7 @@ if (window.socket && typeof window.socket.on === "function") {
     const entry = areasById.get(data.areaId)
     if (!entry) return
 
-    appendLog(`ðŸ—‘ï¸ Area removed: ${data.areaId}`)
+    appendLog(`🗑️ Area removed: ${data.areaId}`)
 
     entry.container.destroy()
     areasById.delete(data.areaId)
@@ -372,7 +362,7 @@ function enableToolbar(yes) {
     if (b.id === "btn_start_sim") {
       b.disabled = !yes
       if (!yes) {
-        b.title = "Solo el host puede iniciar la misiÃ³n"
+        b.title = "Solo el host puede iniciar la misión"
       }
     } else {
       b.disabled = !yes
@@ -383,7 +373,7 @@ function enableToolbar(yes) {
   })
 
   if (!yes) {
-    appendLog("âš ï¸ Modo espectador: solo el host puede editar")
+    appendLog("⚠️ Modo espectador: solo el host puede editar")
   }
 }
 
@@ -467,6 +457,12 @@ function clearAreaTiles(areaMeta) {
   fillAreaTiles(areaMeta, 0)
 }
 
+function pushUndo(op) {
+  if (undoStack.length >= MAX_UNDO) undoStack.shift()
+  undoStack.push(op)
+  redoStack.length = 0
+}
+
 function createAreaVisual(scene, areaMeta, emitToServer = false) {
   const { id, type, x, y, w, h } = areaMeta
   const px = GRID_ORIGIN_X + x * TILE_W
@@ -548,7 +544,6 @@ function createAreaVisual(scene, areaMeta, emitToServer = false) {
       ty = clamp(ty, 0, GRID_ROWS - areaMeta.h)
       container.x = GRID_ORIGIN_X + tx * TILE_W
       container.y = GRID_ORIGIN_Y + ty * TILE_H
-      // update ghost while dragging existing area
       currentDraggedArea = {
         type: areaMeta.type,
         w: areaMeta.w,
@@ -675,12 +670,6 @@ function rotateSelected(objEntry) {
   container.add([g, label])
   container.setSize(meta.w * TILE_W, meta.h * TILE_H)
   fillAreaTiles(meta, meta.id)
-  // Changed from pushUndo to let pushUndo = ... in updateScene to ensure it's declared.
-  const pushUndo = (op) => {
-    if (undoStack.length >= MAX_UNDO) undoStack.shift()
-    undoStack.push(op)
-    redoStack.length = 0 // Clear redo stack on new action
-  }
   pushUndo({ type: "rotate", areaId: meta.id, from: prev, to: clone(meta) })
   window.socket.emit && window.socket.emit("update_area", { sessionId: SESSION_ID, area: meta })
   appendLog("rotated area " + meta.id)
@@ -699,12 +688,6 @@ function deleteSelected(objEntry) {
       sessionId: SESSION_ID,
       areaId: meta.id,
     })
-  // Changed from pushUndo to let pushUndo = ... in updateScene to ensure it's declared.
-  const pushUndo = (op) => {
-    if (undoStack.length >= MAX_UNDO) undoStack.shift()
-    undoStack.push(op)
-    redoStack.length = 0 // Clear redo stack on new action
-  }
   pushUndo({ type: "delete", area: clone(meta) })
   appendLog("deleted area " + meta.id)
   selectedAreaId = null
@@ -714,12 +697,11 @@ function deleteSelected(objEntry) {
 function preloadScene() {
   this.load.json("meta", META_PATH)
   this.load.image("map", "/assets/maps/map.png")
-  this.load.image("next", "/assets/next.png") // Preload navigation icons
+  this.load.image("next", "/assets/next.png")
   this.load.image("previous", "/assets/previous.png")
   this.load.json("map_grid", "/assets/maps/map_grid.json")
   this.load.audio("error_sound", "/assets/sfx/error.mp3")
-  // --- preload HUD stat icons (use available area icons as fallbacks) ---
-  // load the 3-state images for each variable from /assets/variables
+  
   const stats = ["hp", "hunger", "oxygen", "energy", "sanity", "fatigue"]
   const states = ["low", "mid", "high"]
   for (const stat of stats) {
@@ -730,7 +712,6 @@ function preloadScene() {
     }
   }
 
-  // --- preload area icons for in-game toolbar ---
   const areaIconMap = {
     Kitchen: "/assets/areas/kitchen.png",
     Sleep: "/assets/areas/sleep.png",
@@ -755,7 +736,6 @@ function preloadScene() {
 function createScene() {
   function clientToCanvas(scene, clientX, clientY) {
     const rect = scene.sys.canvas.getBoundingClientRect()
-    // rect.width = CSS display width, scene.sys.canvas.width = internal canvas width
     const scaleX = scene.sys.canvas.width / rect.width
     const scaleY = scene.sys.canvas.height / rect.height
     const x = (clientX - rect.left) * scaleX
@@ -780,10 +760,9 @@ function createScene() {
   const scene = this
   const { width, height } = scene.sys.game.canvas
   debugLogEl = document.getElementById("log")
-  // stateEl is now a let, so this assignment is valid.
   stateEl = document.getElementById("session-state")
   appendLog("createScene starting...")
-  // compute grid origin so it is centered inside canvas
+  
   const canvasW = this.sys.canvas.width
   const canvasH = this.sys.canvas.height
   const gridPixelW = TILE_W * GRID_COLS
@@ -791,7 +770,6 @@ function createScene() {
   GRID_ORIGIN_X = Math.floor((canvasW - gridPixelW) / 2)
   GRID_ORIGIN_Y = Math.floor((canvasH - gridPixelH) / 2)
 
-  // draw base grid at origin
   const g = this.add.graphics()
   g.lineStyle(1, 0x333333, 1)
   for (let y = 0; y < GRID_ROWS; y++) {
@@ -802,13 +780,11 @@ function createScene() {
   this.baseGridGraphics = g
 
   function redrawGrid() {
-    // recomputar grid origin segÃºn tamaÃ±o actual del canvas
     const canvasW = scene.sys.canvas.width
     const canvasH = scene.sys.canvas.height
     GRID_ORIGIN_X = Math.floor((canvasW - TILE_W * GRID_COLS) / 2)
     GRID_ORIGIN_Y = Math.floor((canvasH - TILE_H * GRID_ROWS) / 2)
 
-    // redraw base grid
     scene.baseGridGraphics.clear()
     scene.baseGridGraphics.lineStyle(1, 0x333333, 1)
     for (let yy = 0; yy < GRID_ROWS; yy++) {
@@ -817,7 +793,6 @@ function createScene() {
       }
     }
 
-    // reposicionar mapImg si existe
     if (scene.mapImg) {
       const targetW = TILE_W * GRID_COLS
       const targetH = TILE_H * GRID_ROWS
@@ -835,29 +810,24 @@ function createScene() {
       scene.mapImg.y = GRID_ORIGIN_Y + extraY
     }
 
-    // reposicionar areas existentes
     areasById.forEach((entry) => {
       const meta = entry.meta
       entry.container.x = GRID_ORIGIN_X + meta.x * TILE_W
       entry.container.y = GRID_ORIGIN_Y + meta.y * TILE_H
     })
 
-    // reposicionar in-game toolbar bottom-center
     if (scene._inGameToolbar && scene._inGameToolbar.container) {
       scene._inGameToolbar.container.x = scene.sys.canvas.width / 2
       scene._inGameToolbar.container.y = scene.sys.canvas.height - 40
     }
 
-    // reajustar playerSprite depth/posiciÃ³n relativa si existe
     if (playerSprite) {
       playerSprite.setDepth(playerSprite.y)
     }
   }
 
-  // Llamar inicialmente para normalizar (ya que el config ahora puede haber inicializado con el tamaÃ±o real)
   redrawGrid()
 
-  // escuchar cambios de tamaÃ±o (cuando el usuario redimensione la ventana o cambie layout)
   this.scale.on("resize", () => {
     try {
       redrawGrid()
@@ -865,17 +835,16 @@ function createScene() {
       console.warn("resize redrawGrid failed", e)
     }
   })
-  // Hud top-left stats (hidden initially; will fade-in on Start Simulation)
+  
   const vars = ["hp", "hunger", "oxygen", "energy", "sanity", "fatigue"]
   const playerStats = {}
-  // Expose for console
   window.playerStats = playerStats
   const statGroup = this.add.container(20, 20)
   statGroup.setAlpha(0)
   statGroup.setVisible(false)
 
   vars.forEach((name, i) => {
-    const y = i * 28 // vertical spacing
+    const y = i * 28
     playerStats[name] = 100
 
     const icon = scene.add.image(0, y, `${name}_high`).setOrigin(0, 0)
@@ -890,7 +859,6 @@ function createScene() {
   })
   statGroup.setScrollFactor(0)
 
-  // Expose helper to show stats with a fade-in tween
   this.showStats = function (opts = {}) {
     try {
       statGroup.setVisible(true)
@@ -907,7 +875,6 @@ function createScene() {
     }
   }
 
-  // Update hud function
   function updateHUD() {
     window.updateHUD = updateHUD
     vars.forEach((name) => {
@@ -922,15 +889,23 @@ function createScene() {
     })
   }
 
-  // initialize HUD visuals immediately
   try {
     updateHUD()
   } catch (e) {
     console.warn("updateHUD init failed", e)
   }
 
-  this.input.keyboard.addKeys("W,A,S,D")
-  // create toolbar (must exist)
+  this.cursors = this.input.keyboard.createCursorKeys();
+  this.keys = this.input.keyboard.addKeys({
+    W: Phaser.Input.Keyboard.KeyCodes.W,
+    A: Phaser.Input.Keyboard.KeyCodes.A,
+    S: Phaser.Input.Keyboard.KeyCodes.S,
+    D: Phaser.Input.Keyboard.KeyCodes.D,
+    SHIFT: Phaser.Input.Keyboard.KeyCodes.SHIFT
+  });
+  
+  console.log("[Input] Keyboard controls initialized");
+  
   if (typeof createToolbar !== "function") {
     appendLog("FATAL: createToolbar not defined. Aborting scene init.")
     return
@@ -941,9 +916,7 @@ function createScene() {
   const domToolbar = document.getElementById("toolbar_bar")
   if (domToolbar) domToolbar.style.display = "none"
 
-  // In-game toolbar (bottom center) creation
   function createInGameToolbar(scene) {
-    // container anchored to bottom-center
     const tw = scene.add.container(scene.sys.canvas.width / 2, scene.sys.canvas.height - 40)
     tw.setDepth(1000)
     tw.setSize(480, 64)
@@ -975,7 +948,6 @@ function createScene() {
     const totalPages = Math.ceil(areaDefs.length / AREAS_PER_PAGE)
 
     function renderPage(page) {
-      // clear previous icons
       icons.forEach((icon) => icon.destroy())
       icons.length = 0
       tw.list = tw.list.filter((child) => !child._isNavBtn)
@@ -992,7 +964,6 @@ function createScene() {
         img.h = a.h
         img.setData("draggable", true)
 
-        // Hover label
         function showLabel() {
           if (img._hoverLabel) return
           const label = scene.add
@@ -1016,7 +987,6 @@ function createScene() {
         img.on("pointerover", showLabel)
         img.on("pointerout", hideLabel)
 
-        // pointerdown starts drag from toolbar
         img.on("pointerdown", (pointer) => {
           currentDraggedArea = {
             type: a.type,
@@ -1026,14 +996,13 @@ function createScene() {
           }
           window.currentDraggedArea = currentDraggedArea
           appendLog("in-game drag start: " + a.type)
-          // create a follow sprite to show a floating preview of the dragged area
+          
           try {
             const key = `area_icon_${a.type}`
             let canvasPos
             if (pointer && pointer.event && typeof pointer.event.clientX === "number") {
               canvasPos = clientToCanvas(scene, pointer.event.clientX, pointer.event.clientY)
             } else {
-              // pointer.x/y ya podrÃ­an ser internal canvas coords (Phaser)
               canvasPos = { x: pointer.x || 0, y: pointer.y || 0 }
             }
             const follow = scene.add
@@ -1052,7 +1021,6 @@ function createScene() {
         x += spacing
       }
 
-      // Previous button
       if (page > 0) {
         const prevBtn = scene.add
           .image(-300, 0, "previous")
@@ -1065,7 +1033,6 @@ function createScene() {
         })
         tw.add(prevBtn)
       }
-      // Next button
       if (page < totalPages - 1) {
         const nextBtn = scene.add.image(300, 0, "next").setDisplaySize(32, 32).setInteractive({ cursor: "pointer" })
         nextBtn._isNavBtn = true
@@ -1077,7 +1044,6 @@ function createScene() {
       }
     }
 
-    // Preload los Ã­conos de navegaciÃ³n
     if (!scene.textures.exists("next")) scene.load.image("next", "/assets/next.png")
     if (!scene.textures.exists("previous")) scene.load.image("previous", "/assets/previous.png")
     scene.load.once("complete", () => {
@@ -1087,7 +1053,6 @@ function createScene() {
     return { container: tw, icons }
   }
 
-  // create in-game toolbar now and keep reference
   const inGameToolbar = createInGameToolbar(this)
   this._inGameToolbar = inGameToolbar
 
@@ -1113,7 +1078,6 @@ function createScene() {
   ghostRect = this.add.graphics()
   ghostRect.setDepth(5000)
 
-  // allowed grid load (may be different resolution)
   const mapGrid = this.cache.json.get("map_grid")
   if (mapGrid && Array.isArray(mapGrid.cells)) {
     allowedGrid = mapGrid.cells
@@ -1128,7 +1092,6 @@ function createScene() {
     appendLog("No map_grid.json found - everything allowed by default.")
   }
 
-  // place & scale background map so it fits the grid area (centered inside grid area)
   let mapImg = null
   if (this.textures.exists("map")) {
     const tex = this.textures.get("map")
@@ -1163,35 +1126,30 @@ function createScene() {
         .setOrigin(0.5, 1)
       playerSprite.setScale(SPRITE_SCALE)
       playerSprite.setDepth(playerSprite.y)
-      playerSprite.setVisible(!isEditMode)
-      playerSprite.active = !isEditMode
-      // Store initial player sprite position for camera system
+      
+      // CRITICAL: Keep hidden until simulation starts
+      playerSprite.setVisible(false)
+      playerSprite.active = false
+      
       playerSprite.setData("origX", playerSprite.x)
       playerSprite.setData("origY", playerSprite.y)
 
       window.playerSprite = playerSprite
     }
-    // Initialize mission system if in isometric mode
-    simulationStarted = true
-    if (playerSprite) {
-      // The player sprite is only visible in simulation mode
-      playerSprite.setVisible(false)
-      playerSprite.active = false
-    }
-    // BudgetSystem is now declared as let in updateScene, so this assignment is valid.
+    
+    // Initialize BudgetSystem
     if (!scene.budget) {
-      // BudgetSystem is now declared as let in updateScene, so this assignment is valid.
       if (typeof window.BudgetSystem !== 'undefined') {
         try {
           scene.budget = new window.BudgetSystem(scene);
           window.budgetSystem = scene.budget;
+          appendLog("[Budget] Sistema de presupuesto inicializado correctamente (post-load).");
         } catch (error) {
           console.error('Error initializing BudgetSystem:', error);
         }
       }
-      window.budgetSystem = scene.budget
-      appendLog("[Budget] Sistema de presupuesto inicializado correctamente (post-load).")
     }
+    
     if (meta && meta.frames && meta.frames.animations && meta.frames.animations.walk) {
       for (const [dir, arr] of Object.entries(meta.frames.animations.walk)) {
         const frames = arr.map((p) => ({ key: keyFor(p) }))
@@ -1209,7 +1167,6 @@ function createScene() {
   })
   this.load.start()
 
-  // pointermove -> preview (apply origin offset)
   this.input.on("pointermove", (pointer) => {
     if (isIsometricMode || !currentDraggedArea) return
     const rect = scene.sys.canvas.getBoundingClientRect()
@@ -1235,12 +1192,127 @@ function createScene() {
         scene._dragFollowSprite.x = canvasX
         scene._dragFollowSprite.y = canvasY
       }
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
   })
 
-  // Chat and Session Info functions
+  window._phaserPreviewPointerMove = (clientX, clientY) => {
+    try {
+      const canvasPos = clientToCanvas(scene, clientX, clientY)
+      const worldPoint = scene.cameras.main.getWorldPoint(canvasPos.x, canvasPos.y)
+      const localX = worldPoint.x - GRID_ORIGIN_X
+      const localY = worldPoint.y - GRID_ORIGIN_Y
+      const tx = Math.floor(localX / TILE_W)
+      const ty = Math.floor(localY / TILE_H)
+      updateGhost(tx, ty)
+
+      if (scene._dragFollowSprite) {
+        scene._dragFollowSprite.x = canvasPos.x
+        scene._dragFollowSprite.y = canvasPos.y
+      }
+    } catch (e) {}
+  }
+
+  this.input.on("pointerup", phaserPointerUp)
+
+  window._phaserPointerUp = (clientX, clientY) => {
+    try {
+      const canvasPos = clientToCanvas(scene, clientX, clientY)
+      const pointer = { x: canvasPos.x, y: canvasPos.y, event: { clientX, clientY } }
+      phaserPointerUp(pointer)
+    } catch (e) {}
+  }
+
+  function phaserPointerUp(pointer) {
+    if (isIsometricMode || !currentDraggedArea) return
+    const rel = getCanvasRelativePointer(pointer, scene)
+    const worldPoint = scene.cameras.main.getWorldPoint(rel.x, rel.y)
+
+    const localX = worldPoint.x - GRID_ORIGIN_X
+    const localY = worldPoint.y - GRID_ORIGIN_Y
+    const tx = Math.floor(localX / TILE_W),
+      ty = Math.floor(localY / TILE_H)
+
+    dbgPlacementState(tx, ty, currentDraggedArea.w, currentDraggedArea.h)
+    const okLocal = window.DEV_BYPASS_CLIENT_PLACE
+      ? true
+      : clientCanPlace(
+          localBoard,
+          tx,
+          ty,
+          currentDraggedArea.w,
+          currentDraggedArea.h
+        )
+
+    let okMap = true
+    if (allowedGrid) {
+      for (let yy = 0; yy < currentDraggedArea.h; yy++) {
+        for (let xx = 0; xx < currentDraggedArea.w; xx++) {
+          const cx = tx + xx,
+            cy = ty + yy
+          if (!isCellAllowed(cx, cy)) {
+            okMap = false
+            break
+          }
+        }
+        if (!okMap) break
+      }
+    }
+
+    if (!okLocal || !okMap) {
+      appendLog(`placement invalid at (${tx},${ty})`)
+    } else {
+      if (!scene.budget) {
+        console.warn("[Budget] Sistema de presupuesto no inicializado aún.");
+        currentDraggedArea = null
+        window.currentDraggedArea = null
+        ghostRect.clear()
+        return
+      }
+      const canAfford = scene.budget.canAfford(
+        currentDraggedArea.type,
+        currentDraggedArea.w,
+        currentDraggedArea.h,
+        currentDraggedArea.missions || 0
+      )
+
+      if (canAfford) {
+        const purchased = scene.budget.purchase(
+          currentDraggedArea.type,
+          currentDraggedArea.w,
+          currentDraggedArea.h,
+          currentDraggedArea.missions || 0
+        )
+
+        if (purchased) {
+          const areaMeta = {
+            id: "a" + Date.now(),
+            type: currentDraggedArea.type,
+            x: tx,
+            y: ty,
+            w: currentDraggedArea.w,
+            h: currentDraggedArea.h,
+            rotation: 0,
+            missions: currentDraggedArea.missions || 0,
+            playerId: PLAYER_ID || "p1",
+          }
+          createAreaVisual(scene, areaMeta, true)
+          pushUndo({ type: "place", area: clone(areaMeta) })
+        }
+      }
+    }
+
+    currentDraggedArea = null
+    window.currentDraggedArea = null
+    ghostRect.clear()
+    
+    try {
+      if (scene._dragFollowSprite) {
+        scene._dragFollowSprite.destroy()
+        scene._dragFollowSprite = null
+      }
+    } catch (e) {}
+  }
+
   window.sendChatMessage = (message) => {
     if (!window.socket || !SESSION_ID) return
 
@@ -1261,21 +1333,19 @@ function createScene() {
 
 // ---------- Helper functions for managing other players ----
 function createOtherPlayerSprite(player) {
-  if (otherPlayers.has(player.id)) return // Already exists
+  if (otherPlayers.has(player.id)) return
 
   const scene = game.scene.scenes[0]
   if (!scene) return
 
-  const key = player.textureKey || "crew_medic_walk_south_0" // Fallback key
+  const key = player.textureKey || "crew_medic_walk_south_0"
   const sprite = scene.add
     .sprite(GRID_ORIGIN_X + (player.x || 0) * TILE_W, GRID_ORIGIN_Y + (player.y || 0) * TILE_H, key)
     .setOrigin(0.5, 1)
     .setScale(SPRITE_SCALE)
 
-  // Set depth after sprite is created
   sprite.setDepth(sprite.y)
 
-  // Add name tag
   const nameTag = scene.add
     .text(sprite.x, sprite.y - sprite.displayHeight - 5, player.name, {
       fontSize: "12px",
@@ -1284,8 +1354,8 @@ function createOtherPlayerSprite(player) {
       padding: { x: 4, y: 1 },
     })
     .setOrigin(0.5, 1)
-    .setDepth(sprite.depth + 1) // Ensure name tag is above sprite
-  nameTag.setScrollFactor(0) // Make name tag fixed relative to camera
+    .setDepth(sprite.depth + 1)
+  nameTag.setScrollFactor(0)
 
   otherPlayers.set(player.id, { sprite, nameTag, data: player })
   appendLog(`Created sprite for player ${player.name} (${player.id})`)
@@ -1301,27 +1371,23 @@ function updateOtherPlayerSprite(player) {
   const scene = game.scene.scenes[0]
   if (!scene) return
 
-  // Update position
   entry.sprite.x = GRID_ORIGIN_X + (player.x || 0) * TILE_W
   entry.sprite.y = GRID_ORIGIN_Y + (player.y || 0) * TILE_H
-  entry.sprite.setDepth(entry.sprite.y) // Update depth
+  entry.sprite.setDepth(entry.sprite.y)
 
-  // Update name tag position and depth
   entry.nameTag.x = entry.sprite.x
   entry.nameTag.y = entry.sprite.y - entry.sprite.displayHeight - 5
   entry.nameTag.setDepth(entry.sprite.depth + 1)
 
-  // Update texture if changed (e.g., role change)
   if (player.textureKey && entry.sprite.texture.key !== player.textureKey) {
     entry.sprite.setTexture(player.textureKey)
   }
 
-  // Update animation if provided
   if (player.animation && entry.sprite.anims.currentAnim?.key !== player.animation) {
     entry.sprite.play(player.animation)
   }
 
-  entry.data = player // Store updated player data
+  entry.data = player
 }
 
 function removeOtherPlayerSprite(playerId) {
@@ -1340,99 +1406,219 @@ function updateOtherPlayerPosition(playerId, x, y) {
   const entry = otherPlayers.get(playerId)
   entry.sprite.x = GRID_ORIGIN_X + x * TILE_W
   entry.sprite.y = GRID_ORIGIN_Y + y * TILE_H
-  entry.sprite.setDepth(entry.sprite.y) // Update depth
+  entry.sprite.setDepth(entry.sprite.y)
 
-  // Update name tag position
   entry.nameTag.x = entry.sprite.x
   entry.nameTag.y = entry.sprite.y - entry.sprite.displayHeight - 5
   entry.nameTag.setDepth(entry.sprite.depth + 1)
 
-  // Store updated position in data
   entry.data.x = x
   entry.data.y = y
 }
 
 function updateScene() {
   if (!game) return
+  
+  const scene = game.scene.scenes[0]
+  if (!scene) return
 
-  // Update player sprite depth based on its y position
-  if (playerSprite) {
-    playerSprite.setDepth(playerSprite.y)
+  // Only handle player movement if simulation has started
+  if (simulationStarted && playerSprite && playerSprite.active) {
+    playerSprite.setDepth(playerSprite.y + 1000)
+    
+    if (scene.cursors && scene.keys) {
+      const speed = scene.keys.SHIFT.isDown ? 8 : 5
+      let dx = 0
+      let dy = 0
+      let moved = false
+
+      if (scene.cursors.up.isDown || scene.keys.W.isDown) {
+        dy = -speed
+        moved = true
+      }
+      if (scene.cursors.down.isDown || scene.keys.S.isDown) {
+        dy = speed
+        moved = true
+      }
+      if (scene.cursors.left.isDown || scene.keys.A.isDown) {
+        dx = -speed
+        moved = true
+      }
+      if (scene.cursors.right.isDown || scene.keys.D.isDown) {
+        dx = speed
+        moved = true
+      }
+
+      if (moved) {
+        if (dx !== 0 && dy !== 0) {
+          const magnitude = Math.sqrt(dx * dx + dy * dy)
+          dx = (dx / magnitude) * speed
+          dy = (dy / magnitude) * speed
+        }
+
+        const newX = playerSprite.x + dx
+        const newY = playerSprite.y + dy
+
+        const bounds = {
+          minX: GRID_ORIGIN_X,
+          maxX: GRID_ORIGIN_X + (GRID_COLS * TILE_W),
+          minY: GRID_ORIGIN_Y,
+          maxY: GRID_ORIGIN_Y + (GRID_ROWS * TILE_H)
+        }
+
+        if (newX >= bounds.minX && newX <= bounds.maxX && 
+            newY >= bounds.minY && newY <= bounds.maxY) {
+          playerSprite.x = newX
+          playerSprite.y = newY
+
+          if (window.socket && window.socket.emit && window.SESSION_ID && window.PLAYER_ID) {
+            window.socket.emit("player_moved", {
+              sessionId: window.SESSION_ID,
+              playerId: window.PLAYER_ID,
+              x: Math.round((newX - GRID_ORIGIN_X) / TILE_W * 100) / 100,
+              y: Math.round((newY - GRID_ORIGIN_Y) / TILE_H * 100) / 100
+            })
+          }
+
+          if (scene.anims.exists("walk_south") && !playerSprite.anims.isPlaying) {
+            playerSprite.play("walk_south")
+          }
+        }
+      } else {
+        if (playerSprite.anims.isPlaying) {
+          playerSprite.stop()
+        }
+      }
+    }
   }
 
   // Camera follow logic
-  if (game.scene.scenes.length > 0 && game.scene.scenes[0].cameras.main && playerSprite) {
-    const scene = game.scene.scenes[0]
+  if (simulationStarted && scene.cameras.main && playerSprite && playerSprite.active) {
     const camera = scene.cameras.main
-    const playerPos = playerSprite.getWorldTransformMatrix().applyXy(playerSprite.x, playerSprite.y)
+    
+    const targetX = playerSprite.x - camera.width / 2
+    const targetY = playerSprite.y - camera.height / 2
 
-    // Calculate target camera position to center player
-    const targetX = playerPos.x - camera.width / 2 + playerSprite.width / 2
-    const targetY = playerPos.y - camera.height / 2 + playerSprite.height / 2
-
-    // Apply offsets
     const finalTargetX = targetX + cameraOffsetX
     const finalTargetY = targetY + cameraOffsetY
 
-    // Lerp camera position
-    camera.x += (finalTargetX - camera.x) * CAMERA_LERP_SPEED
-    camera.y += (finalTargetY - camera.y) * CAMERA_LERP_SPEED
+    const currentScrollX = camera.scrollX
+    const currentScrollY = camera.scrollY
+    
+    camera.scrollX = currentScrollX + (finalTargetX - currentScrollX) * CAMERA_LERP_SPEED
+    camera.scrollY = currentScrollY + (finalTargetY - currentScrollY) * CAMERA_LERP_SPEED
   }
+
+  // Update other players' sprite depths
+  otherPlayers.forEach((entry) => {
+    if (entry.sprite && entry.sprite.active) {
+      entry.sprite.setDepth(entry.sprite.y + 1000)
+    }
+  })
 }
 
 // ----------- ISOMETRIC MODE TRANSITION -----------
 function startIsometricTransition() {
-  if (isIsometricMode || simulationStarted) return // Already in isometric or simulation started
+  if (isIsometricMode || simulationStarted) {
+    console.log("[Transition] Already in simulation mode, skipping...");
+    return;
+  }
 
-  appendLog("Starting isometric transition...")
+  console.log("[Transition] Starting isometric transition...");
+  appendLog("Starting mission simulation...");
+  
   simulationStarted = true
   isEditMode = false
   window.isEditMode = false
-  enableToolbar(false) // Disable editing tools
-
-  // Hide editor toolbar, show simulation HUD
-  const domToolbar = document.getElementById("toolbar_bar")
-  if (domToolbar) domToolbar.style.display = "none"
-  const sessionStateEl = document.getElementById("session-state")
-  if (sessionStateEl) sessionStateEl.style.display = "block" // Show simulation state
-
-  // Show player stats HUD
-  if (game && game.scene.scenes[0]) {
-    game.scene.scenes[0].showStats({ duration: 1000 })
+  window.isIsometricMode = true
+  
+  const scene = game?.scene?.scenes[0];
+  if (!scene) {
+    console.error("[Transition] No scene available!");
+    return;
   }
 
-  // Make player sprite visible and enable physics/movement if applicable
+  const domToolbar = document.getElementById("toolbar_bar");
+  if (domToolbar) domToolbar.style.display = "none";
+  
+  if (scene._inGameToolbar && scene._inGameToolbar.container) {
+    scene._inGameToolbar.container.setVisible(false);
+  }
+
+  if (scene.showStats) {
+    scene.showStats({ duration: 1000 });
+  }
+
   if (playerSprite) {
-    playerSprite.setVisible(true)
-    playerSprite.active = true
-    // Ensure player sprite is in front of other elements
-    playerSprite.setDepth(playerSprite.y)
-    // If playerSprite exists, it should be in simulation mode now.
-    // The camera will follow it.
-    if (game && game.scene.scenes[0]) {
-      const scene = game.scene.scenes[0]
-      // Ensure the player is the target for the camera
-      // Assuming the camera follow logic in updateScene uses playerSprite
-    }
+    playerSprite.setVisible(true);
+    playerSprite.active = true;
+    playerSprite.setDepth(playerSprite.y + 1000);
+    console.log("[Transition] Player sprite activated at", playerSprite.x, playerSprite.y);
+  } else {
+    console.warn("[Transition] No player sprite found!");
   }
 
-  // Optional: Destroy editor-specific elements like ghostRect, toolbar icons etc.
-  if (ghostRect) ghostRect.destroy()
-  ghostRect = null
+  if (ghostRect) {
+    ghostRect.destroy();
+    ghostRect = null;
+  }
 
-  // Destroy editor areas and clear the board
   areasById.forEach((entry) => {
-    entry.container.destroy()
-  })
-  areasById.clear()
-  removedSet.clear()
-  undoStack.length = 0
-  redoStack.length = 0
-  localBoard = Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(0))
+    if (entry.container && entry.container.input) {
+      entry.container.disableInteractive();
+      entry.container.setAlpha(0.95);
+    }
+  });
 
-  // You might want to load an isometric scene or switch camera perspective here
-  // For now, we'll just disable editing and prepare for simulation.
-  appendLog("Isometric transition initiated. Awaiting simulation start.")
+  try {
+    if (window.missionSystem && typeof window.missionSystem.initialize === 'function') {
+      const placedAreas = Array.from(areasById.values()).map(e => e.meta.type);
+      const uniqueAreas = [...new Set(placedAreas)];
+      
+      const playerRoles = [window.PLAYER_ROLE || 'crew_medic'];
+      const playerCount = otherPlayers.size + 1;
+      
+      console.log("[Transition] Initializing mission system:", {
+        playerCount,
+        playerRoles,
+        placedAreas: uniqueAreas
+      });
+      
+      window.missionSystem.initialize(playerCount, playerRoles, uniqueAreas);
+      appendLog("✅ Mission system initialized");
+    } else {
+      console.warn("[Transition] Mission system not available");
+    }
+  } catch (error) {
+    console.error("[Transition] Error initializing mission system:", error);
+  }
+
+  try {
+    if (window.eventSystem && typeof window.eventSystem.start === 'function') {
+      window.eventSystem.start();
+      appendLog("✅ Event system started");
+      console.log("[Transition] Event system started");
+    }
+  } catch (error) {
+    console.error("[Transition] Error starting event system:", error);
+  }
+
+  try {
+    if (scene.budget && typeof scene.budget.fadeOut === 'function') {
+      scene.budget.fadeOut();
+    } else if (window.budgetSystem && typeof window.budgetSystem.fadeOut === 'function') {
+      window.budgetSystem.fadeOut();
+    }
+  } catch (error) {
+    console.warn("[Transition] Error hiding budget system:", error);
+  }
+
+  if (scene.input && scene.input.keyboard) {
+    scene.input.keyboard.enabled = true;
+  }
+
+  console.log("[Transition] ✅ Transition complete!");
+  appendLog("🚀 Mission simulation started!");
 }
 
 // ------------ PHASER GAME SETUP ------------
@@ -1455,10 +1641,9 @@ function initGame() {
       },
     },
     scale: {
-      mode: window.Phaser.Scale.RESIZE, // Resizes to fit the window
+      mode: window.Phaser.Scale.RESIZE,
       autoCenter: window.Phaser.Scale.CENTER_BOTH,
     },
-    // Make the canvas responsive
     callbacks: {
       postBoot: (game) => {
         window.addEventListener("resize", () => {
@@ -1470,8 +1655,8 @@ function initGame() {
 
   try {
     game = new window.Phaser.Game(config)
-    window.game = game // Expose game instance globally
-    appendLog("âœ… Phaser game initialized")
+    window.game = game
+    appendLog("✔️ Phaser game initialized")
   } catch (e) {
     console.error("Failed to initialize Phaser game:", e)
     appendLog("ERROR: Phaser game initialization failed: " + e.message)
@@ -1485,7 +1670,6 @@ window.addEventListener("load", () => {
   window._mainLoaded = true
 })
 
-// Add undo/redo functionality to global scope for debugging
 window.undoLast = () => {
   if (undoStack.length === 0) {
     appendLog("Undo stack is empty.")
@@ -1493,17 +1677,17 @@ window.undoLast = () => {
   }
   const op = undoStack.pop()
   if (!op) return
-  redoStack.push(op) // Push to redo stack
+  redoStack.push(op)
   appendLog(`Undoing: ${op.type}`)
   switch (op.type) {
-    case "add": // Revert adding an area
+    case "add":
       if (areasById.has(op.area.id)) {
         areasById.get(op.area.id).container.destroy()
         areasById.delete(op.area.id)
         clearAreaTiles(op.area)
       }
       break
-    case "move": // Revert moving an area
+    case "move":
       if (areasById.has(op.areaId)) {
         const entry = areasById.get(op.areaId)
         clearAreaTiles(entry.meta)
@@ -1515,14 +1699,13 @@ window.undoLast = () => {
         appendLog(`Area ${op.areaId} moved back to (${op.from.x}, ${op.from.y})`)
       }
       break
-    case "rotate": // Revert rotation
+    case "rotate":
       if (areasById.has(op.areaId)) {
         const entry = areasById.get(op.areaId)
         clearAreaTiles(entry.meta)
         const prevMeta = clone(entry.meta)
         entry.meta.w = op.from.w
         entry.meta.h = op.from.h
-        // Note: rotation property itself is not managed here, just the dimensions
         fillAreaTiles(entry.meta, op.areaId)
         entry.container.removeAll(true)
         const scene = game.scene.scenes[0]
@@ -1540,22 +1723,21 @@ window.undoLast = () => {
         appendLog(`Area ${op.areaId} rotated back.`)
       }
       break
-    case "delete": // Revert deletion
+    case "delete":
       appendLog(`Re-adding area ${op.area.id}`)
-      // Need to re-add area using its original meta data
       if (game && game.scene.scenes[0]) {
         const scene = game.scene.scenes[0]
-        createAreaVisual(scene, op.area, false) // don't emit to server on undo
+        createAreaVisual(scene, op.area, false)
       }
       break
   }
   if (op.area) {
-    // update board after action
     fillAreaTiles(op.area, op.area.id)
   } else if (op.areaId && areasById.has(op.areaId)) {
     fillAreaTiles(areasById.get(op.areaId).meta, op.areaId)
   }
 }
+
 window.redoLast = () => {
   if (redoStack.length === 0) {
     appendLog("Redo stack is empty.")
@@ -1563,16 +1745,16 @@ window.redoLast = () => {
   }
   const op = redoStack.pop()
   if (!op) return
-  undoStack.push(op) // Push back to undo stack
+  undoStack.push(op)
   appendLog(`Redoing: ${op.type}`)
   switch (op.type) {
-    case "add": // Re-add area
+    case "add":
       if (game && game.scene.scenes[0]) {
         const scene = game.scene.scenes[0]
-        createAreaVisual(scene, op.area, true) // emit to server on redo
+        createAreaVisual(scene, op.area, true)
       }
       break
-    case "move": // Re-apply move
+    case "move":
       if (areasById.has(op.areaId)) {
         const entry = areasById.get(op.areaId)
         clearAreaTiles(entry.meta)
@@ -1585,13 +1767,12 @@ window.redoLast = () => {
         window.socket.emit && window.socket.emit("update_area", { sessionId: SESSION_ID, area: entry.meta })
       }
       break
-    case "rotate": // Re-apply rotation
+    case "rotate":
       if (areasById.has(op.areaId)) {
-        // Re-use rotateSelected logic by passing the area entry
         rotateSelected(areasById.get(op.areaId))
       }
       break
-    case "delete": // Re-delete area
+    case "delete":
       if (areasById.has(op.area.id)) {
         const entry = areasById.get(op.area.id)
         entry.container.destroy()
@@ -1613,14 +1794,22 @@ window.onMultiplayerReady = (data) => {
   appendLog(`Multiplayer ready: ${data.playerName} (${data.player?.role})`)
   appendLog(`Session: ${SESSION_ID}, Player: ${PLAYER_ID}, Host: ${isHost}`)
 
-  // Enable toolbar if host
   enableToolbar(isHost)
 }
 
 window.onMissionStarted = (data) => {
-  console.log("[v0] Mission started callback received", data)
+  console.log("[v0] Mission started callback received", data);
+  console.log("[v0] Current state:", {
+    simulationStarted,
+    isEditMode,
+    playerSprite: !!playerSprite,
+    game: !!game
+  });
+  
   if (!simulationStarted) {
-    startIsometricTransition()
+    console.log("[v0] Starting transition to simulation mode...");
+    startIsometricTransition();
+  } else {
+    console.log("[v0] Already in simulation mode, skipping transition");
   }
 }
-  

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>NASA SPATIUM – Multiplayer</title>
 
-    <!-- Phaser debe cargarse primero -->
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
@@ -248,7 +247,6 @@
         background: #0a0a14;
       }
 
-      /* Asegurar que el canvas de Phaser se renderice correctamente */
       #game-container canvas {
         display: block;
         width: 100% !important;
@@ -389,6 +387,94 @@
         background: #666;
       }
 
+      /* Modal for connection */
+      #connection-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      }
+
+      #connection-modal.hidden {
+        display: none;
+      }
+
+      .modal-content {
+        background: linear-gradient(180deg, #0f2433, #07121a);
+        border: 2px solid var(--accent);
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 0 30px rgba(102, 204, 255, 0.5);
+      }
+
+      .modal-content h2 {
+        color: var(--accent);
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .modal-content input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        background: #0a0a14;
+        border: 2px solid #1a2332;
+        border-radius: 6px;
+        color: #e6eef6;
+        font-size: 14px;
+      }
+
+      .modal-content input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      .modal-content button {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: var(--accent);
+        border: none;
+        border-radius: 6px;
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+
+      .modal-content button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 0 15px rgba(102, 204, 255, 0.7);
+      }
+
+      .modal-content button.secondary {
+        background: #1a2332;
+        color: var(--accent);
+      }
+
+      .modal-error {
+        color: #ff4444;
+        text-align: center;
+        margin-top: 10px;
+        font-size: 12px;
+      }
+
+      .modal-info {
+        color: var(--muted);
+        text-align: center;
+        margin-bottom: 15px;
+        font-size: 12px;
+      }
+
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
@@ -409,7 +495,6 @@
         }
       }
 
-      /* Loading indicator */
       #loading-indicator {
         position: absolute;
         top: 50%;
@@ -427,8 +512,34 @@
     </style>
   </head>
 
-
   <body>
+    <!-- Connection Modal -->
+    <div id="connection-modal">
+      <div class="modal-content">
+        <h2>🚀 NASA SPATIUM</h2>
+        <div id="modal-step-1">
+          <p class="modal-info">Enter your name to join</p>
+          <input type="text" id="player-name-input" placeholder="Your name (1-20 characters)" maxlength="20" />
+          <button onclick="submitName()">Continue</button>
+          <div id="name-error" class="modal-error"></div>
+        </div>
+        <div id="modal-step-2" style="display: none;">
+          <p class="modal-info">Create a new session or join existing</p>
+          <button onclick="createSession()">Create New Session</button>
+          <button onclick="showJoinInput()" class="secondary">Join Existing Session</button>
+          <div id="join-input-section" style="display: none; margin-top: 15px;">
+            <input type="text" id="session-id-input" placeholder="Enter Session ID" />
+            <button onclick="joinSession()">Join Session</button>
+            <button onclick="hideJoinInput()" class="secondary">Back</button>
+          </div>
+          <div id="session-error" class="modal-error"></div>
+        </div>
+        <div id="modal-connecting" style="display: none; text-align: center;">
+          <p class="modal-info">⏳ Connecting...</p>
+        </div>
+      </div>
+    </div>
+
     <div class="main-container">
       <!-- SIDEBAR -->
       <aside id="sidebar">
@@ -484,31 +595,14 @@
       </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- 3. CARGAR DEPENDENCIAS EN ORDEN CORRECTO     -->
-    <!-- ============================================ -->
-    
-    <!-- IMPORTANTE: BudgetSystem ANTES de main.js -->
     <script src="/budgetSystem.js"></script>
-    
-    <!-- Mission dependencies -->
     <script src="/mission-bank.js"></script>
     <script src="/missions.js"></script>
     <script src="/missionSystem.js"></script>
-    
-    <!-- Event system -->
     <script src="/events.js"></script>
-    
-    <!-- ============================================ -->
-    <!-- 4. MAIN.JS AL FINAL (necesita todas las deps) -->
-    <!-- ============================================ -->
     <script src="/main.js"></script>
 
-    <!-- ============================================ -->
-    <!-- 5. MULTIPLAYER LOGIC (después de main.js)    -->
-    <!-- ============================================ -->
     <script>
-      // Verificar que todo está cargado
       console.log('🔍 Checking dependencies...');
       console.log('- Phaser:', typeof Phaser !== 'undefined' ? '✅' : '❌');
       console.log('- Socket.io:', typeof io !== 'undefined' ? '✅' : '❌');
@@ -523,7 +617,9 @@
       window.PLAYER_ROLE = null;
       window.PLAYER_NAME = null;
 
-      // Esperar a que Phaser y main.js estén listos
+      let socket = null;
+      let isConnected = false;
+
       function waitForGame(callback) {
         if (typeof Phaser !== 'undefined' && window._mainLoaded) {
           callback();
@@ -538,7 +634,6 @@
         waitForGame(() => {
           console.log("✅ Game ready, initializing multiplayer...");
           
-          // Ocultar loading indicator
           const loadingIndicator = document.getElementById("loading-indicator");
           if (loadingIndicator) {
             loadingIndicator.classList.add("hidden");
@@ -548,9 +643,91 @@
         });
       });
 
+      function showError(elementId, message) {
+        const errorEl = document.getElementById(elementId);
+        if (errorEl) {
+          errorEl.textContent = message;
+          setTimeout(() => {
+            errorEl.textContent = '';
+          }, 3000);
+        }
+      }
+
+      function submitName() {
+        const nameInput = document.getElementById("player-name-input");
+        const name = nameInput.value.trim();
+        
+        if (!name || name.length === 0) {
+          showError('name-error', 'Please enter a name');
+          return;
+        }
+        
+        if (name.length > 20) {
+          showError('name-error', 'Name too long (max 20 characters)');
+          return;
+        }
+        
+        window.PLAYER_NAME = name;
+        document.getElementById("modal-step-1").style.display = "none";
+        document.getElementById("modal-step-2").style.display = "block";
+      }
+
+      function showJoinInput() {
+        document.getElementById("join-input-section").style.display = "block";
+      }
+
+      function hideJoinInput() {
+        document.getElementById("join-input-section").style.display = "none";
+        document.getElementById("session-id-input").value = "";
+      }
+
+      function createSession() {
+        const sessionId = 'session_' + Date.now();
+        window.SESSION_ID = sessionId;
+        
+        document.getElementById("modal-step-2").style.display = "none";
+        document.getElementById("modal-connecting").style.display = "block";
+        
+        console.log('Creating session:', sessionId);
+        if (socket && socket.connected) {
+          socket.emit("create_session", { sessionId, playerName: window.PLAYER_NAME });
+        } else {
+          showError('session-error', 'Not connected to server');
+          document.getElementById("modal-step-2").style.display = "block";
+          document.getElementById("modal-connecting").style.display = "none";
+        }
+      }
+
+      function joinSession() {
+        const sessionInput = document.getElementById("session-id-input");
+        const sessionId = sessionInput.value.trim();
+        
+        if (!sessionId) {
+          showError('session-error', 'Please enter a session ID');
+          return;
+        }
+        
+        window.SESSION_ID = sessionId;
+        
+        document.getElementById("modal-step-2").style.display = "none";
+        document.getElementById("modal-connecting").style.display = "block";
+        
+        console.log('Joining session:', sessionId);
+        if (socket && socket.connected) {
+          socket.emit("join_session", { 
+            sessionId, 
+            player: { name: window.PLAYER_NAME } 
+          });
+        } else {
+          showError('session-error', 'Not connected to server');
+          document.getElementById("modal-step-2").style.display = "block";
+          document.getElementById("modal-connecting").style.display = "none";
+        }
+      }
+
       function initMultiplayer() {
         const SERVER_URL = window.location.origin;
-        const socket = window.socket || io(SERVER_URL);
+        socket = io(SERVER_URL);
         window.socket = socket;
 
         const statusDiv = document.getElementById("status");
@@ -560,22 +737,7 @@
         const gameTimeEl = document.getElementById("gameTime");
         const startBtn = document.getElementById("btn_start_sim_html");
 
-        let isConnected = false;
         let gameStartTime = null;
-
-        function promptForName() {
-          let name = prompt("Enter your name (1-20 characters):");
-          if (!name) return promptForName();
-          name = name.trim();
-          if (name.length === 0 || name.length > 20) return promptForName();
-          return name;
-        }
-
-        function promptForSession() {
-          const action = prompt("Type 'create' to create a new session or enter a session ID to join:");
-          if (!action) return promptForSession();
-          return action.trim();
-        }
 
         function setStatus(text, cls = "") {
           statusDiv.textContent = text;
@@ -598,7 +760,7 @@
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        function showError(text) {
+        function showErrorMessage(text) {
           const d = document.createElement("div");
           d.className = "message system";
           d.style.color = "#ff6b6b";
@@ -618,22 +780,10 @@
         socket.on("connect", () => {
           console.log("✅ Socket connected:", socket.id);
           setStatus("Connected", "connected");
+          isConnected = true;
           
-          const playerName = promptForName();
-          window.PLAYER_NAME = playerName;
-          
-          const sessionAction = promptForSession();
-          
-          if (sessionAction.toLowerCase() === 'create') {
-            const sessionId = 'session_' + Date.now();
-            window.SESSION_ID = sessionId;
-            socket.emit("create_session", { sessionId, playerName });
-            addSystem(`Creating session ${sessionId}...`);
-          } else {
-            window.SESSION_ID = sessionAction;
-            socket.emit("join_session", { sessionId: sessionAction, player: { name: playerName } });
-            addSystem(`Joining session ${sessionAction}...`);
-          }
+          // Show modal only after connection
+          document.getElementById("connection-modal").classList.remove("hidden");
         });
 
         socket.on("join_success", (data) => {
@@ -641,7 +791,9 @@
           window.PLAYER_ID = data.playerId;
           window.IS_HOST = data.isHost;
           window.PLAYER_ROLE = data.player?.role || 'crew';
-          isConnected = true;
+          
+          // Hide modal
+          document.getElementById("connection-modal").classList.add("hidden");
           
           setStatus(`${data.playerName} (${data.player?.role || 'crew'})`, "connected");
           inputEl.disabled = false;
@@ -654,7 +806,7 @@
             addSystem(`✅ You joined as ${data.player?.role}. Only the host can edit areas.`);
           }
           
-          addSystem(`📍 Session: ${data.sessionId}`);
+          addSystem(`🔑 Session: ${data.sessionId}`);
           
           if (window.onMultiplayerReady) {
             window.onMultiplayerReady(data);
@@ -663,20 +815,17 @@
 
         socket.on("join_rejected", (data) => {
           console.error("❌ Join rejected:", data);
-          showError(data.message);
-          setStatus(data.message, "error");
+          showError('session-error', data.message);
           
-          if (data.reason === "room_full") {
-            addSystem("Room is full (max 5 players)");
-            return;
-          }
+          // Go back to step 2
+          document.getElementById("modal-connecting").style.display = "none";
+          document.getElementById("modal-step-2").style.display = "block";
           
           if (data.reason === "name_taken") {
-            setTimeout(() => {
-              const newName = promptForName();
-              window.PLAYER_NAME = newName;
-              socket.emit("join_session", { sessionId: window.SESSION_ID, player: { name: newName } });
-            }, 500);
+            // Go back to step 1 to change name
+            document.getElementById("modal-step-2").style.display = "none";
+            document.getElementById("modal-step-1").style.display = "block";
+            showError('name-error', 'Name already taken. Please choose another.');
           }
         });
 
@@ -718,14 +867,14 @@
           sendBtn.disabled = true;
           startBtn.disabled = true;
           addSystem("⚠️ Connection lost");
+          isConnected = false;
         });
 
         socket.on("error", (error) => {
           console.error("❌ Socket error:", error);
-          showError("Connection error: " + error);
+          showErrorMessage("Connection error: " + error);
         });
 
-        // Chat handlers
         sendBtn.addEventListener("click", sendChat);
         inputEl.addEventListener("keypress", (ev) => {
           if (ev.key === "Enter") {
@@ -736,7 +885,7 @@
 
         function sendChat() {
           if (!isConnected || !window.PLAYER_ID) {
-            showError("Not connected to server");
+            showErrorMessage("Not connected to server");
             return;
           }
           const text = inputEl.value.trim();
@@ -750,15 +899,28 @@
           inputEl.value = "";
         }
 
-        // Start mission handler
         startBtn.addEventListener("click", () => {
           if (!window.IS_HOST) {
-            showError("Only the host can start the mission");
+            showErrorMessage("Only the host can start the mission");
             return;
           }
           
           console.log("Starting mission...");
           socket.emit("start_mission", { sessionId: window.SESSION_ID });
+        });
+        
+        // Allow Enter key on name input
+        document.getElementById("player-name-input").addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            submitName();
+          }
+        });
+        
+        // Allow Enter key on session input
+        document.getElementById("session-id-input").addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            joinSession();
+          }
         });
         
         console.log('✅ Multiplayer system initialized');
